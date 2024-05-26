@@ -30,6 +30,7 @@ ShaderProgram::~ShaderProgram() {
 }
 
 ErrorOr<void, ShaderError> ShaderProgram::UseVertexShader(char const* path) {
+  std::cout << "USeVertexShader" << std::endl;
   GLint shader_compiled = GL_FALSE;
   GLuint vertex_shader = 0;
   GLint link_success = GL_FALSE;
@@ -39,6 +40,7 @@ ErrorOr<void, ShaderError> ShaderProgram::UseVertexShader(char const* path) {
   std::istreambuf_iterator begin(file);
   std::string source (begin, {});
   const GLchar* source_p = source.c_str();
+  std::cout << source << std::endl;
   glShaderSource(vertex_shader, 1, &source_p, 0);
   glCompileShader(vertex_shader);
   glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &shader_compiled);
@@ -56,6 +58,7 @@ ErrorOr<void, ShaderError> ShaderProgram::UseVertexShader(char const* path) {
 
 
 ErrorOr<void, ShaderError> ShaderProgram::UseFragmentShader(char const* path) {
+  std::cout << "USeFragmentShader" << std::endl;
   GLint shader_compiled = GL_FALSE;
   GLuint fragment_shader = 0;
   GLint link_success = GL_FALSE;
@@ -81,6 +84,15 @@ ErrorOr<void, ShaderError> ShaderProgram::UseFragmentShader(char const* path) {
 
 ErrorOr<void, ShaderError> ShaderProgram::Enable() {
   glLinkProgram(program_id);
+  GLint success = GL_FALSE;
+  glGetProgramiv(program_id, GL_LINK_STATUS, &success);
+  if (!success) {
+    char info[1024] = {};
+    GLsizei outlen = 0;
+    glGetProgramInfoLog(program_id, 1024, &outlen, info);
+    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << info << std::endl;
+    return ShaderError(ShaderError::CompileShader, "Linked failed");
+  }
   if (m_vertex_shader) glDeleteShader(m_vertex_shader);
   if (m_fragment_shader) glDeleteShader(m_fragment_shader);
   return {};
@@ -89,14 +101,6 @@ ErrorOr<void, ShaderError> ShaderProgram::Enable() {
 
 void ShaderProgram::Use() {
   glUseProgram(program_id);
-  GLint success = GL_FALSE;
-  glGetProgramiv(program_id, GL_LINK_STATUS, &success);
-  if (!success) {
-    char info[1024] = {};
-    GLsizei outlen = 0;
-    glGetProgramInfoLog(program_id, 1024, &outlen, info);
-    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << info << std::endl;
-  }
 }
 
 
