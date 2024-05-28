@@ -50,34 +50,7 @@ struct OpenGLRenderer : public Renderer {
   void DrawCube(GameObject& obj) {
     auto& resource = drawable_resources[obj.Type()];
 
-    GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
     resource.program.Use();
-
-    auto vertices = ModelConstruction::Cube(
-      {0.0, 0.0, 0.0},
-      {1.0, 0.0, 0.0},
-      {1.0, 0.0, 1.0},
-      {0.0, 0.0, 1.0},
-      {0.0, 1.0, 0.0},
-      {1.0, 1.0, 0.0},
-      {1.0, 1.0, 1.0},
-      {0.0, 1.0, 1.0}
-    );
-    std::cout << vertices.size() << " " << vertices.size() / sizeof(float) <<  std::endl;
-
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, resource.texture);
@@ -86,20 +59,14 @@ struct OpenGLRenderer : public Renderer {
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)640 / (float)480, 0.1f, 100.0f);
     resource.program.SetUniformMatrix("projection", projection);
     resource.program.SetUniformMatrix("view", camera.GetViewMatrix());
-    {
-      GLuint transform_loc = glGetUniformLocation(resource.program.program_id, "transform");
-      glm::mat4 trans(1.0f);
-      trans = glm::translate(trans, obj.pos);
-      // trans = glm::scale(trans, glm::vec3(1.0f, 1.0f, 1.0f));
+    
+    glm::mat4 trans(1.0f);
+    trans = glm::translate(trans, obj.pos);
 
-      resource.program.SetUniformMatrix("transform", trans);
-      resource.program.SetUniformMatrix("projection", projection);
-    }
-    glBindVertexArray(vao);
+    resource.program.SetUniformMatrix("transform", trans);
+
+    glBindVertexArray(resource.vao);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
   }
 
   void LoadResource(GameObject& obj) {
@@ -129,12 +96,47 @@ struct OpenGLRenderer : public Renderer {
     }
     stbi_image_free(image_data);
     resource.texture =  texture;
+
+    auto vertices = ModelConstruction::Cube(
+      {0.0, 0.0, 0.0},
+      {1.0, 0.0, 0.0},
+      {1.0, 0.0, 1.0},
+      {0.0, 0.0, 1.0},
+      {0.0, 1.0, 0.0},
+      {1.0, 1.0, 0.0},
+      {1.0, 1.0, 1.0},
+      {0.0, 1.0, 1.0}
+    );
+    resource.model_data = vertices;
+
+    GLuint vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    
+
+
+    glBufferData(GL_ARRAY_BUFFER, resource.model_data.size() * sizeof(float), resource.model_data.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    resource.vao = vao;
+
   }
 
 
   struct DrawableResource {
     ShaderProgram program;
     GLuint texture;
+    std::vector<float> model_data;
+    GLuint vao;
   };
 
   std::map<char const*, DrawableResource> drawable_resources;

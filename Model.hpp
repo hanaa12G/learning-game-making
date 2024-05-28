@@ -166,7 +166,6 @@ struct ModelConstruction {
       PointAndTexture(p3, {1.0, 1.0}),
       PointAndTexture(p4, {1.0, 0.0}));
     triangle_1.insert(triangle_1.end(), triangle_2.begin(), triangle_2.end());
-    std::cout << triangle_1.size() << std::endl;
     return triangle_1;
   }
 
