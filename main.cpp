@@ -47,9 +47,45 @@ struct OpenGLRenderer : public Renderer {
     DrawCube(obj);
   }
 
+  virtual void DrawBatch(std::vector<GameObject*>& obj) override {
+    if (obj.empty()) return;
+    if (drawable_resources.count(BatchNameOf(*obj.front())) == 0) {
+      LoadBatchResource(*obj.front());
+    }
+    auto& resource = drawable_resources[BatchNameOf(*obj.front())];
+    resource.program.Use();
+
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, resource.texture);
+    
+
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)640 / (float)480, 0.1f, 100.0f);
+
+    resource.program.SetUniformMatrix("projection", projection);
+    resource.program.SetUniformMatrix("view", camera.GetViewMatrix());
+    std::vector<glm::mat4> transform_list;
+    int count = 0;
+    while (count < obj.size()) {
+      int i = 0;
+      for (i = 0; i < 1000 && count + i < obj.size(); ++i) {
+        GameObject* game_object = obj[count + i];
+
+        glm::mat4 trans(1.0f);
+        trans = glm::translate(trans, game_object->pos);
+        std::string name = std::string("transform") + "[" + std::to_string(i) + "]";
+        resource.program.SetUniformMatrix(name.c_str(), trans);
+      }
+      //std::cout << "Draw " << i << "object" << std::endl;
+      glBindVertexArray(resource.vao);
+      glDrawArraysInstanced(GL_TRIANGLES, 0, 36, i);
+      count += i;
+    }
+
+  }
+
   void DrawCube(GameObject& obj) {
     auto& resource = drawable_resources[obj.Type()];
-
     resource.program.Use();
 
     glActiveTexture(GL_TEXTURE0);
@@ -67,6 +103,66 @@ struct OpenGLRenderer : public Renderer {
 
     glBindVertexArray(resource.vao);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
+
+  void LoadBatchResource(GameObject& obj) {
+    auto& resource = drawable_resources[BatchNameOf(obj)];
+    resource.program = SetupShaderProgram(
+      "/home/wsluser/Workspace/game/runtime/vertex_shader_batch.glsl",
+       "/home/wsluser/Workspace/game/runtime/fragment_shader.glsl").ReleaseValue();
+    resource.program.Enable();
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int image_width, image_height, nr_channel;
+    unsigned char* image_data = stbi_load(obj.Texture(), &image_width, &image_height, &nr_channel, 0);
+
+    if (image_data) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+      glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else {
+      fprintf(stderr, "Can't open image\n");
+    }
+    stbi_image_free(image_data);
+    resource.texture =  texture;
+
+    auto vertices = ModelConstruction::Cube(
+      {0.0, 0.0, 0.0},
+      {1.0, 0.0, 0.0},
+      {1.0, 0.0, 1.0},
+      {0.0, 0.0, 1.0},
+      {0.0, 1.0, 0.0},
+      {1.0, 1.0, 0.0},
+      {1.0, 1.0, 1.0},
+      {0.0, 1.0, 1.0}
+    );
+    resource.model_data = vertices;
+
+    GLuint vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    
+
+
+    glBufferData(GL_ARRAY_BUFFER, resource.model_data.size() * sizeof(float), resource.model_data.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    resource.vao = vao;
   }
 
   void LoadResource(GameObject& obj) {
@@ -132,6 +228,11 @@ struct OpenGLRenderer : public Renderer {
   }
 
 
+  std::string BatchNameOf(GameObject& obj) {
+    return std::string(obj.Type()) + "_batch";
+  }
+
+
   struct DrawableResource {
     ShaderProgram program;
     GLuint texture;
@@ -139,7 +240,7 @@ struct OpenGLRenderer : public Renderer {
     GLuint vao;
   };
 
-  std::map<char const*, DrawableResource> drawable_resources;
+  std::map<std::string, DrawableResource> drawable_resources;
   OpenGLCamera camera;
   //ShaderProgram shader_program;
 };
