@@ -68,7 +68,7 @@ struct OpenGLRenderer : public Renderer {
     int count = 0;
     while (count < obj.size()) {
       int i = 0;
-      for (i = 0; i < 1000 && count + i < obj.size(); ++i) {
+      for (i = 0; i < 512 && count + i < obj.size(); ++i) {
         GameObject* game_object = obj[count + i];
 
         glm::mat4 trans(1.0f);
@@ -323,57 +323,56 @@ int main() {
   // renderer.shader_program = SetupShaderProgram("runtime/vertext_shader.glsl", "runtime/fragment_shader.glsl").ReleaseValue();
 
   while (!quit) {
-    SDL_PollEvent(&e);
-    if (e.type == SDL_QUIT)
-      quit = true;
-    if (e.type == SDL_KEYDOWN) {
-      if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+    while (SDL_PollEvent(&e)) {
+      if (e.type == SDL_QUIT)
         quit = true;
-      else {
-        switch (e.key.keysym.sym) {
+      if (e.type == SDL_KEYDOWN) {
+        if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+          quit = true;
+        else {
+          switch (e.key.keysym.sym) {
           case 'a':
-            game.player.Move(glm::vec3 {-0.1, 0.0, 0.0 });
+            game.player.Move(glm::vec3{-0.1, 0.0, 0.0});
             break;
           case 'd':
-            game.player.Move(glm::vec3 {0.1, 0.0, 0.0 });
+            game.player.Move(glm::vec3{0.1, 0.0, 0.0});
             break;
           case 'w':
-            game.player.Move(glm::vec3 {0.0, 0.1, 0.0 });
+            game.player.Move(glm::vec3{0.0, 0.1, 0.0});
             break;
           case 's':
-            game.player.Move(glm::vec3 {0.0, -0.1, 0.0 });
+            game.player.Move(glm::vec3{0.0, -0.1, 0.0});
             break;
           case 'q':
-            game.player.Move(glm::vec3 {0.0, 0.0, 0.1 });
+            game.player.Move(glm::vec3{0.0, 0.0, 0.1});
             break;
           case 'e':
-            game.player.Move(glm::vec3 {-0.0, 0.0, -0.1 });
+            game.player.Move(glm::vec3{-0.0, 0.0, -0.1});
             break;
+          }
         }
+      } else if (e.type == SDL_MOUSEBUTTONDOWN &&
+                 e.button.button == SDL_BUTTON_LEFT) {
+        mouse_down = true;
+        start_x = e.button.x;
+        start_y = e.button.y;
+      } else if (e.type == SDL_MOUSEBUTTONUP &&
+                 e.button.button == SDL_BUTTON_LEFT) {
+        mouse_down = false;
+        move_x = 0.0f;
+        move_y = 0.0f;
+      } else if (e.type == SDL_MOUSEMOTION && mouse_down) {
+        int x = e.button.x;
+        int y = e.button.y;
+
+        int dx = x - start_x;
+        int dy = y - start_y;
+
+        start_x = x;
+        start_y = y;
+
+        game.player.Rotate(dx * 5.0, dy * 5.0);
       }
-    }
-    else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT) {
-      mouse_down = true;
-      start_x = e.button.x;
-      start_y = e.button.y;
-    }
-    else if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_LEFT) {
-      mouse_down = false;
-      move_x = 0.0f;
-      move_y = 0.0f;
-    }
-    else if (e.type == SDL_MOUSEMOTION && mouse_down) {
-      int x = e.button.x;
-      int y = e.button.y;
-
-      int dx = x - start_x;
-      int dy = y - start_y;
-
-      start_x = x;
-      start_y = y;
-
-      game.player.Rotate(dx * 5.0, dy * 5.0);
-
     }
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

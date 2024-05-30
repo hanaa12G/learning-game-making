@@ -7,7 +7,7 @@ out vec2 TexCoord;
 
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat4 transform[1000];
+uniform mat4 transform[512];
 
 void main() {
   gl_Position = projection * view * transform[gl_InstanceID] * vec4(aPos, 1.0);
