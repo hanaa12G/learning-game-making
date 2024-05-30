@@ -11,8 +11,10 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <vector>
 #include <map>
+#include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -22,6 +24,8 @@
 #include "OpenGLCamera.hpp"
 #include "game/Game.hpp"
 
+namespace chrono = std::chrono;
+using namespace std::literals;
 
 ErrorOr<ShaderProgram> SetupShaderProgram(char const* vertex_shader_path, char const* fragment_shader_path) {
   auto shader_1 = TRY(ShaderProgram::create());
@@ -321,8 +325,11 @@ int main() {
   OpenGLRenderer renderer;
   
   // renderer.shader_program = SetupShaderProgram("runtime/vertext_shader.glsl", "runtime/fragment_shader.glsl").ReleaseValue();
-
+  auto frame_start = chrono::high_resolution_clock::now();
+  auto fps = 90;
+  auto frame_time = 1000ms / fps;
   while (!quit) {
+    frame_start = chrono::high_resolution_clock::now();
     while (SDL_PollEvent(&e)) {
       if (e.type == SDL_QUIT)
         quit = true;
@@ -381,6 +388,11 @@ int main() {
     game_update(game, renderer);
 
     SDL_GL_SwapWindow(window);
+    auto frame_end = chrono::high_resolution_clock::now();
+    auto frame_duration = frame_end - frame_start;
+    if (frame_duration < frame_time) {
+      std::this_thread::sleep_for(frame_time - frame_duration);
+    }
   }
 
   SDL_Quit();
