@@ -36,13 +36,16 @@ struct Rock : public GameObject {
 struct Player : public GameObject {
   glm::vec3 dir;
   Camera* camera;
+  bool should_move;
 
-  Player(glm::vec3 position = {0, 0, 0}, glm::vec3 direction = {0, 0, 0}) : GameObject(position), dir(direction) {}
+  Player(glm::vec3 position = {0, 0, 0}, glm::vec3 direction = {0, 0, 0}) : GameObject(position), dir(direction), should_move (true) {}
   char const* Type() override { return "Player"; }
   char const* Texture() override { assert(false); }
 
   void Move(glm::vec3 d) {
+    if (!should_move) return;
     camera->Move(d);
+    pos += d;
     fprintf(stdout, "Position: %f, %f, %f\n", camera->location.x, camera->location.y, camera->location.z);
   }
   void Rotate(float yaw, float pitch) {
@@ -57,10 +60,32 @@ struct Renderer {
   virtual void DrawBatch(std::vector<GameObject*>& obj) {}
 };
 
+struct Grid {
+  using Cell = GameObject*;
+
+  long dim;
+
+  Grid(long d = 0) {
+    dim = d;
+    long size = dim * dim * dim;
+    data.resize(size, nullptr);
+  }
+
+  Cell& at(int x, int y, int z) {
+    x += dim / 2;
+    y += dim / 2;
+    z += dim / 2;
+    return data.at(x * dim * dim + y * dim + z);
+  }
+
+  std::vector<Cell> data;
+};
+
 struct Game {
   bool init = false;
   std::vector<GameObject*> objects;
   Player player;
+  Grid grid;
 };
 
 
