@@ -1,8 +1,12 @@
 #pragma once
+#include <glm/geometric.hpp>
 #include <list>
 #include <cassert>
 #include <cstdio>
 #include <vector>
+#include <chrono>
+
+namespace chrono = std::chrono;
 
 #include "Camera.hpp"
 
@@ -37,6 +41,10 @@ struct Player : public GameObject {
   glm::vec3 dir;
   Camera* camera;
   bool should_move;
+  glm::vec3 velocity;
+  float speed = 0.0f;
+  float acceleration = 10.0f;
+  chrono::time_point<chrono::high_resolution_clock> velocity_set_timestamp;
 
   Player(glm::vec3 position = {0, 0, 0}, glm::vec3 direction = {0, 0, 0}) : GameObject(position), dir(direction), should_move (true) {}
   char const* Type() override { return "Player"; }
@@ -50,6 +58,12 @@ struct Player : public GameObject {
   }
   void Rotate(float yaw, float pitch) {
     camera->Rotate(yaw, pitch);
+  }
+
+  void UpdateVelocity() {
+    if (glm::length(velocity) != 0) {
+      velocity_set_timestamp = chrono::high_resolution_clock::now();
+    }
   }
 };
 
@@ -81,6 +95,45 @@ struct Grid {
   std::vector<Cell> data;
 };
 
+
+struct InputButton {
+  bool is_down;
+  int transition_count;
+  chrono::time_point<chrono::high_resolution_clock> down_timestamp;
+
+  float duration() {
+    auto now = chrono::high_resolution_clock::now();
+    auto dur = chrono::duration_cast<chrono::duration<float>>(now - down_timestamp);
+    return dur.count();
+  }
+};
+struct InputMouse {
+  enum {
+    MouseButtonLeft,
+    MouseButtonRight,
+    MouseButtonMiddle,
+    MouseButtonCount,
+  };
+
+  int x;
+  int y;
+  InputButton mouse_buttons[MouseButtonCount];
+};
+
+struct GameInput {
+  enum {
+    ButtonUp,
+    ButtonDown,
+    ButtonLeft,
+    ButtonRight,
+    ButtonFront,
+    ButtonBack,
+    ButtonCount
+  };
+  InputButton buttons[ButtonCount];
+  InputMouse mouse;
+};
+
 struct Game {
   bool init = false;
   std::vector<GameObject*> objects;
@@ -92,5 +145,5 @@ struct Game {
 
 extern "C" {
 
-  void game_update(Game& game, Renderer& renderer);
+  void game_update(Game& game, Renderer& renderer, GameInput& input, float elapsed_time);
 }

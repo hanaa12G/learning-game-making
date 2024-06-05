@@ -300,6 +300,137 @@ int init(SDL_Window **window, GLuint& shader_program) {
 }
 
 
+void CopyLastFrameInput(GameInput& input, GameInput& last_input) {
+  input.buttons[GameInput::ButtonUp] = {.is_down = last_input.buttons[GameInput::ButtonUp].is_down, .transition_count = 0, .down_timestamp = last_input.buttons[GameInput::ButtonUp].down_timestamp};
+  input.buttons[GameInput::ButtonDown] = {.is_down = last_input.buttons[GameInput::ButtonDown].is_down, .transition_count = 0};
+  input.buttons[GameInput::ButtonLeft] = {.is_down = last_input.buttons[GameInput::ButtonLeft].is_down, .transition_count = 0};
+  input.buttons[GameInput::ButtonRight] = {.is_down = last_input.buttons[GameInput::ButtonRight].is_down, .transition_count = 0};
+
+  input.mouse.mouse_buttons[InputMouse::MouseButtonRight] = {.is_down = last_input.mouse.mouse_buttons[InputMouse::MouseButtonRight].is_down, .transition_count = 0};
+  input.mouse.mouse_buttons[InputMouse::MouseButtonLeft] = {.is_down = last_input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].is_down, .transition_count = 0};
+
+  input.mouse.x = last_input.mouse.x;
+  input.mouse.y = last_input.mouse.y;
+}
+
+void HandleInputEvent(SDL_Event e, GameInput& input) {
+  if (e.type == SDL_KEYDOWN) {
+    if (e.key.repeat > 0) return;
+    switch (e.key.keysym.sym) {
+      case 'w':
+      {
+        bool was_down = input.buttons[GameInput::ButtonUp].is_down;
+        bool is_down = true;
+        input.buttons[GameInput::ButtonUp].is_down = is_down;
+        input.buttons[GameInput::ButtonUp].transition_count += (int) (was_down != is_down);
+        input.buttons[GameInput::ButtonUp].down_timestamp = chrono::high_resolution_clock::now();
+        std::cout << "Button state is set" << std::endl;
+      } break;
+      case 's':
+      {
+        bool was_down = input.buttons[GameInput::ButtonDown].is_down;
+        bool is_down = true;
+        input.buttons[GameInput::ButtonDown].is_down = is_down;
+        input.buttons[GameInput::ButtonDown].transition_count += (int) (was_down != is_down);
+      } break;
+      case 'a':
+      {
+        bool was_down = input.buttons[GameInput::ButtonLeft].is_down;
+        bool is_down = true;
+        input.buttons[GameInput::ButtonLeft].is_down = is_down;
+        input.buttons[GameInput::ButtonLeft].transition_count += (int) (was_down != is_down);
+      } break;
+      case 'd':
+      {
+        bool was_down = input.buttons[GameInput::ButtonRight].is_down;
+        bool is_down = true;
+        input.buttons[GameInput::ButtonRight].is_down = is_down;
+        input.buttons[GameInput::ButtonRight].transition_count += (int) (was_down != is_down);
+      } break;
+      default:
+        break;
+    }
+  }
+  else if (e.type == SDL_KEYUP) {
+    switch (e.key.keysym.sym) {
+      case 'w':
+      {
+        bool was_down = input.buttons[GameInput::ButtonUp].is_down;
+        bool is_down = false;
+        input.buttons[GameInput::ButtonUp].is_down = is_down;
+        input.buttons[GameInput::ButtonUp].transition_count += (int) (was_down != is_down);
+      } break;
+      case 's':
+      {
+        bool was_down = input.buttons[GameInput::ButtonDown].is_down;
+        bool is_down = false;
+        input.buttons[GameInput::ButtonDown].is_down = is_down;
+        input.buttons[GameInput::ButtonDown].transition_count += (int) (was_down != is_down);
+      } break;
+      case 'a':
+      {
+        bool was_down = input.buttons[GameInput::ButtonLeft].is_down;
+        bool is_down = false;
+        input.buttons[GameInput::ButtonLeft].is_down = is_down;
+        input.buttons[GameInput::ButtonLeft].transition_count += (int) (was_down != is_down);
+      } break;
+      case 'd':
+      {
+        bool was_down = input.buttons[GameInput::ButtonRight].is_down;
+        bool is_down = false;
+        input.buttons[GameInput::ButtonRight].is_down = is_down;
+        input.buttons[GameInput::ButtonRight].transition_count += (int) (was_down != is_down);
+      } break;
+      default:
+        break;
+    }
+  }
+  else if (e.type == SDL_MOUSEBUTTONDOWN) {
+    switch(e.button.button) {
+      case SDL_BUTTON_LEFT:
+      {
+        bool was_down = input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].is_down;
+        bool is_down = true;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].is_down = is_down;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].transition_count += (int) (was_down != is_down);
+      } break;
+      case SDL_BUTTON_RIGHT:
+      {
+        bool was_down = input.mouse.mouse_buttons[InputMouse::MouseButtonRight].is_down;
+        bool is_down = true;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonRight].is_down = is_down;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonRight].transition_count += (int) (was_down != is_down);
+      } break;
+    }
+    input.mouse.x = e.button.x;
+    input.mouse.y = e.button.y;
+  }
+  else if (e.type == SDL_MOUSEBUTTONUP) {
+    switch(e.button.button) {
+      case SDL_BUTTON_LEFT:
+      {
+        bool was_down = input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].is_down;
+        bool is_down = false;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].is_down = is_down;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonLeft].transition_count += (int) (was_down != is_down);
+      } break;
+      case SDL_BUTTON_RIGHT:
+      {
+        bool was_down = input.mouse.mouse_buttons[InputMouse::MouseButtonRight].is_down;
+        bool is_down = false;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonRight].is_down = is_down;
+        input.mouse.mouse_buttons[InputMouse::MouseButtonRight].transition_count += (int) (was_down != is_down);
+      } break;
+    }
+    input.mouse.x = e.button.x;
+    input.mouse.y = e.button.y;
+  }
+  else if (e.type == SDL_MOUSEMOTION) {
+    input.mouse.x = e.button.x;
+    input.mouse.y = e.button.y;
+  }
+}
+
 
 
 int main() {
@@ -322,15 +453,20 @@ int main() {
   int start_y = 0;
 
   Game game;
+  GameInput input;
+  GameInput prev_input;
   OpenGLRenderer renderer;
   
   // renderer.shader_program = SetupShaderProgram("runtime/vertext_shader.glsl", "runtime/fragment_shader.glsl").ReleaseValue();
   auto frame_start = chrono::high_resolution_clock::now();
-  auto fps = 90;
+  auto fps = 30;
   auto frame_time = 1000ms / fps;
+  auto time_start = chrono::high_resolution_clock::now();
   while (!quit) {
     frame_start = chrono::high_resolution_clock::now();
+    CopyLastFrameInput(input, prev_input);
     while (SDL_PollEvent(&e)) {
+      HandleInputEvent(e, input);
       if (e.type == SDL_QUIT)
         quit = true;
       if (e.type == SDL_KEYDOWN) {
@@ -339,22 +475,22 @@ int main() {
         else {
           switch (e.key.keysym.sym) {
           case 'a':
-            game.player.Move(glm::vec3{-0.1, 0.0, 0.0});
+            //game.player.Move(glm::vec3{-0.1, 0.0, 0.0});
             break;
           case 'd':
-            game.player.Move(glm::vec3{0.1, 0.0, 0.0});
+            //game.player.Move(glm::vec3{0.1, 0.0, 0.0});
             break;
           case 'w':
-            game.player.Move(glm::vec3{0.0, 0.1, 0.0});
+            //game.player.Move(glm::vec3{0.0, 0.1, 0.0});
             break;
           case 's':
-            game.player.Move(glm::vec3{0.0, -0.1, 0.0});
+            //game.player.Move(glm::vec3{0.0, -0.1, 0.0});
             break;
           case 'q':
-            game.player.Move(glm::vec3{0.0, 0.0, 0.1});
+            //game.player.Move(glm::vec3{0.0, 0.0, 0.1});
             break;
           case 'e':
-            game.player.Move(glm::vec3{-0.0, 0.0, -0.1});
+            //game.player.Move(glm::vec3{-0.0, 0.0, -0.1});
             break;
           }
         }
@@ -385,14 +521,20 @@ int main() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    game_update(game, renderer);
+    auto time_end = chrono::high_resolution_clock::now();
+    float elapsed_time = chrono::duration_cast<chrono::duration<float>>(time_end - time_start).count();
+    time_start = time_end;
+    game_update(game, renderer, input, elapsed_time);
 
     SDL_GL_SwapWindow(window);
+    prev_input = input;
+
     auto frame_end = chrono::high_resolution_clock::now();
     auto frame_duration = frame_end - frame_start;
     if (frame_duration < frame_time) {
       std::this_thread::sleep_for(frame_time - frame_duration);
     }
+
   }
 
   SDL_Quit();

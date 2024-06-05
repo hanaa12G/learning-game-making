@@ -1,4 +1,7 @@
 #include "Game.hpp"
+#include <chrono>
+#include <glm/ext/scalar_constants.hpp>
+#include <glm/geometric.hpp>
 #include <iostream>
 #include <map>
 
@@ -14,8 +17,29 @@ bool collision_check(GameObject& a, GameObject& b) {
   return !y;
 }
 
+void update_player_from_input(Player& player, GameInput& input) {
+  float running_duration = 1.0f;
+
+  if (input.buttons[GameInput::ButtonUp].is_down) {
+  std::cout << input.buttons[GameInput::ButtonUp].duration() << std::endl;
+    if (input.buttons[GameInput::ButtonUp].duration() >= running_duration) {
+      player.velocity = glm::normalize(player.camera->direction) * 10.0f;
+    }
+    else {
+      player.velocity = glm::normalize(player.camera->direction) * 1.0f;
+    }
+    player.acceleration = 0.0f;
+  }
+  else if (!input.buttons[GameInput::ButtonUp].is_down) {
+    if (glm::length(player.velocity) >= 0) {
+      player.acceleration = 10.0f;
+      player.UpdateVelocity();
+    }
+  }
+}
+
 extern "C" {
-  void game_update(Game& game, Renderer& renderer) {
+  void game_update(Game& game, Renderer& renderer, GameInput& input, float elapsed_time) {
     if (!game.init) {
       game.grid = Grid(100);
       for (int i = -50; i < 50; ++i) {
@@ -32,7 +56,27 @@ extern "C" {
       game.player = Player({2, 10, 2});
       game.player.camera = new Camera();
       game.player.camera->location = game.player.pos;
+      game.player.velocity = glm::vec3(0);
+      game.player.velocity_set_timestamp = chrono::high_resolution_clock::now();
       game.init = true;
+    }
+    update_player_from_input(game.player, input);
+    if (glm::length(game.player.velocity) > 0) {
+      auto time = elapsed_time;
+      auto accelerator = -game.player.acceleration* glm::normalize(game.player.velocity);
+      auto new_velocity = game.player.velocity + accelerator * time;
+      std::cout << new_velocity.x << " " << new_velocity.y << " " << new_velocity.z << std::endl;
+      auto movement = game.player.velocity * time;
+      game.player.Move(movement);
+
+      auto new_velocity_normalized = glm::normalize(new_velocity);
+      auto old_velocity_normalized = glm::normalize(game.player.velocity);
+
+      if (glm::dot(new_velocity_normalized, old_velocity_normalized) == -1) {
+        game.player.velocity = glm::vec3(0);
+      } else {
+        game.player.velocity = new_velocity;
+      }
     }
     bool collide = false;
     for (auto object: game.grid.data) {
@@ -48,9 +92,6 @@ extern "C" {
         collide = true;
       }
     }
-
-    if (collide) game.player.should_move = false;
-    else game.player.should_move = true;
     
     std::map<std::string, std::vector<GameObject*>> batches;
     renderer.SetActiveCamera(*game.player.camera);
