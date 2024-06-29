@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <vector>
 #include <chrono>
+#include <memory>
 
 namespace chrono = std::chrono;
 
@@ -13,11 +14,47 @@ namespace chrono = std::chrono;
 
 struct GameObject {
   glm::vec3 pos;
-  GameObject(glm::vec3 p) : pos (p) {}
+  char const* m_id;
+  GameObject(glm::vec3 p, char const* id = "") : pos (p) , m_id {id} {}
 
   virtual ~GameObject() {}
   virtual char const* Type() = 0;
   virtual char const* Texture() = 0;
+  char const* Id() { return m_id; }
+};
+
+struct Dot : public GameObject {
+  using GameObject::GameObject;
+
+  char const* Type() override { return "Dot"; };
+  char const* Texture() override { return nullptr; }
+};
+
+struct Line : public GameObject {
+  using GameObject::GameObject;
+
+  glm::vec3 end;
+
+  Line(glm::vec3 start, glm::vec3 e, char const* id = "") : GameObject(start, id), end (e) {}
+
+  glm::vec3 Ray() {
+    return end - pos;
+  }
+
+  char const* Type() override { return "Line"; };
+  char const* Texture() override { return nullptr; }
+};
+struct Rectangle : public GameObject {
+  float width;
+  float height;
+  Rectangle(glm::vec3 pos, float w, float h, char const* id = "") : GameObject (pos, id),  width (w), height (h) {}
+  Rectangle(glm::vec3 topleft, glm::vec3 bottomright, char const* id = "") : GameObject ( topleft + (bottomright - topleft) / 2.0f , id), width (bottomright.x - topleft.x), height (topleft.y - bottomright.y) {}
+
+  glm::vec3 TopLeft() { return glm::vec3 { pos.x - width / 2.0f, pos.y + height / 2.0f, 0.0f }; }
+  glm::vec3 BottomRight() { return  glm::vec3 { pos.x + width / 2.0f, pos.y - height / 2.0f, 0.0f }; }
+
+  char const* Type() override { return "Rectangle"; };
+  char const* Texture() override { return nullptr; }
 };
 
 struct Dirt : public GameObject {
@@ -40,18 +77,23 @@ struct Rock : public GameObject {
 struct Player : public GameObject {
   glm::vec3 dir;
   Camera* camera;
-  bool should_move;
   glm::vec3 velocity;
-  float speed = 0.0f;
   float acceleration = 10.0f;
   chrono::time_point<chrono::high_resolution_clock> velocity_set_timestamp;
 
-  Player(glm::vec3 position = {0, 0, 0}, glm::vec3 direction = {0, 0, 0}) : GameObject(position), dir(direction), should_move (true) {}
+  Player(glm::vec3 position = {0, 0, 0}, glm::vec3 direction = {0, 0, 0}) : GameObject(position), dir(direction){}
   char const* Type() override { return "Player"; }
   char const* Texture() override { assert(false); }
 
+  void SetCamera(Camera* c) {
+    assert(c);
+    camera = c;
+    camera->direction = dir;
+    camera->location = pos + glm::vec3(0.0, 1.0, 0.0);
+    camera->world_up = glm::vec3(0.0, 1.0f, 0.0f);
+    camera->UpdateVector();
+  }
   void Move(glm::vec3 d) {
-    if (!should_move) return;
     camera->Move(d);
     pos += d;
     fprintf(stdout, "Position: %f, %f, %f\n", camera->location.x, camera->location.y, camera->location.z);
@@ -134,12 +176,38 @@ struct GameInput {
   InputMouse mouse;
 };
 
-struct Game {
-  bool init = false;
+struct Scene {
   std::vector<GameObject*> objects;
   Player player;
   Grid grid;
+
+  void Render();
 };
+
+struct Game {
+  bool init = false;
+  std::vector<std::shared_ptr<Scene>> scenes;
+  unsigned int scene_index;
+
+  unsigned int viewport_width;
+  unsigned int viewport_height;
+
+  void SwitchScene() {
+    scene_index += 1;
+    if (scene_index == scenes.size()) scene_index = 0;
+  }
+
+  Scene& CurrentScene() {
+    if (scene_index <= scenes.size()) {
+      return *scenes[scene_index].get();
+    }
+    assert(false);
+  }
+};
+
+
+bool collision_check(GameObject& a, GameObject& b);
+void collision_fix(GameObject& a, GameObject const& b);
 
 
 

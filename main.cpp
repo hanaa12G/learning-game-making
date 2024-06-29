@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
@@ -44,11 +45,33 @@ struct OpenGLRenderer : public Renderer {
   }
 
   virtual void Draw(GameObject& obj) override {
-    if (drawable_resources.count(obj.Type()) == 0) {
-      LoadResource(obj);
+    if (std::string("Dot") == obj.Type()) {
+      Dot& dot = dynamic_cast<Dot&>(obj);
+      if (drawable_resources.count(dot.Type()) == 0) {
+        LoadResource(dot);
+      }
+      DrawDot(dot);
     }
-
-    DrawCube(obj);
+    else if (std::string("Line") == obj.Type()) {
+      Line& line = dynamic_cast<Line&>(obj);
+      if (drawable_resources.count(line.Type()) == 0) {
+        LoadResource(line);
+      }
+      DrawLine(line);
+    }
+    else if (std::string("Rectangle") == obj.Type()) {
+      Rectangle& rectangle = dynamic_cast<Rectangle&>(obj);
+      if (drawable_resources.count(rectangle.Type()) == 0) {
+        LoadResource(rectangle);
+      }
+      DrawRectangle(rectangle);
+    }
+    else {
+      if (drawable_resources.count(obj.Type()) == 0) {
+        LoadResource(obj);
+      }
+      DrawCube(obj);
+    }
   }
 
   virtual void DrawBatch(std::vector<GameObject*>& obj) override {
@@ -107,6 +130,75 @@ struct OpenGLRenderer : public Renderer {
 
     glBindVertexArray(resource.vao);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
+
+  void DrawDot(Dot& dot) {
+    auto& resource = drawable_resources[dot.Type()];
+    resource.program.Use();
+
+    glm::mat4 trans(1.0f);
+    trans = glm::translate(trans, dot.pos);
+    resource.program.SetUniformMatrix("transform", trans);
+    
+    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    glPointSize(10);
+    glBindVertexArray(resource.vao);
+    glDrawArrays(GL_POINTS, 0, 1);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPointSize(1);
+  }
+
+  void DrawLine(Line& line) {
+    auto& resource = drawable_resources[line.Type()];
+    resource.program.Use();
+
+    // How we draw a line:
+    // - Scale a unit vector (1, 0, 0) to the length of the line
+    // - Rotate that vector to correct angle (will be parallel with target vector)
+    // - Move that vector to the position of the target line
+    glm::mat4 trans(1.0f);
+    // trans = glm::scale(trans, glm::vec3(glm::length(line.Ray()), glm::length(line.Ray()), glm::length(line.Ray())));
+    glm::vec3 ox(1.0f, 0.0f, 0.0f);
+    float det = line.Ray().y;
+    float dot = glm::dot(line.Ray(), ox);
+    float angle = glm::atan(det, dot);
+    // std::cout << "angle: " << glm::degrees(angle) << std::endl;
+
+    trans = glm::translate(trans, line.pos);
+    trans = glm::rotate(trans, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+    trans = glm::scale(trans, glm::vec3(glm::length(line.Ray()), 0.0f, 0.0f));
+
+    resource.program.SetUniformMatrix("transform", trans);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glBindVertexArray(resource.vao);
+    glDrawArrays(GL_LINES, 0, 2);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
+
+  void DrawRectangle(Rectangle& rect) {
+    auto& resource = drawable_resources[rect.Type()];
+    resource.program.Use();
+
+    glm::mat4 trans(1.0f);
+    trans = glm::translate(trans, glm::vec3 {rect.pos.x, rect.pos.y, 0.0 });
+    trans = glm::scale(trans, glm::vec3(rect.width, rect.height, 0.0f));
+    trans = glm::translate(trans, glm::vec3 {-0.5f, -0.5f, 0.0f});
+    resource.program.SetUniformMatrix("transform", trans);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glBindVertexArray(resource.vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
+
+  void SetupShader(Dot& dot) {
+    auto& resource = drawable_resources[dot.Type()];
+    resource.program = SetupShaderProgram(
+    "/home/wsluser/Workspace/game/runtime/2d_vertex_shader.glsl",
+    "/home/wsluser/Workspace/game/runtime/2d_fragment_shader.glsl").ReleaseValue();
+
+    resource.program.Use();
   }
 
   void LoadBatchResource(GameObject& obj) {
@@ -231,6 +323,101 @@ struct OpenGLRenderer : public Renderer {
 
   }
 
+  void LoadResource(Dot& dot) {
+    auto& resource = drawable_resources[dot.Type()];
+    resource.program = SetupShaderProgram(
+        "/home/wsluser/Workspace/game/runtime/2d_vertex_shader.glsl",
+        "/home/wsluser/Workspace/game/runtime/2d_fragment_shader.glsl").ReleaseValue();
+    resource.program.Enable();
+
+    auto vertices = std::vector<float> {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+    resource.model_data = vertices;
+
+    GLuint vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, resource.model_data.size() * sizeof(float), resource.model_data.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    resource.vao = vao;
+  }
+
+  void LoadResource(Line& line) {
+    auto& resource = drawable_resources[line.Type()];
+    resource.program = SetupShaderProgram(
+        "/home/wsluser/Workspace/game/runtime/2d_vertex_shader.glsl",
+        "/home/wsluser/Workspace/game/runtime/2d_fragment_shader.glsl").ReleaseValue();
+    resource.program.Enable();
+
+    auto vertices = std::vector<float> {
+      0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      };
+    resource.model_data = vertices;
+
+    GLuint vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, resource.model_data.size() * sizeof(float), resource.model_data.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    resource.vao = vao;
+  }
+
+  void LoadResource(Rectangle& rect) {
+    auto& resource = drawable_resources[rect.Type()];
+    resource.program = SetupShaderProgram(
+        "/home/wsluser/Workspace/game/runtime/2d_vertex_shader.glsl",
+        "/home/wsluser/Workspace/game/runtime/2d_fragment_shader.glsl").ReleaseValue();
+    resource.program.Enable();
+
+    auto vertices = std::vector<float> {
+      0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+
+      0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+      0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+    };
+    resource.model_data = vertices;
+
+    GLuint vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, resource.model_data.size() * sizeof(float), resource.model_data.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    resource.vao = vao;
+  }
+
 
   std::string BatchNameOf(GameObject& obj) {
     return std::string(obj.Type()) + "_batch";
@@ -347,6 +534,13 @@ void HandleInputEvent(SDL_Event e, GameInput& input) {
         input.buttons[GameInput::ButtonRight].is_down = is_down;
         input.buttons[GameInput::ButtonRight].transition_count += (int) (was_down != is_down);
       } break;
+      case 'f':
+      {
+        bool was_down = input.buttons[GameInput::ButtonFront].is_down;
+        bool is_down = true;
+        input.buttons[GameInput::ButtonFront].is_down = is_down;
+        input.buttons[GameInput::ButtonFront].transition_count += (int) (was_down != is_down);
+      };
       default:
         break;
     }
@@ -380,6 +574,13 @@ void HandleInputEvent(SDL_Event e, GameInput& input) {
         bool is_down = false;
         input.buttons[GameInput::ButtonRight].is_down = is_down;
         input.buttons[GameInput::ButtonRight].transition_count += (int) (was_down != is_down);
+      } break;
+      case 'f':
+      {
+        bool was_down = input.buttons[GameInput::ButtonFront].is_down;
+        bool is_down = false;
+        input.buttons[GameInput::ButtonFront].is_down = is_down;
+        input.buttons[GameInput::ButtonFront].transition_count += (int) (was_down != is_down);
       } break;
       default:
         break;
@@ -453,8 +654,10 @@ int main() {
   int start_y = 0;
 
   Game game;
-  GameInput input;
-  GameInput prev_input;
+  game.viewport_width = 640;
+  game.viewport_height = 480;
+  GameInput input {};
+  GameInput prev_input {};
   OpenGLRenderer renderer;
   
   // renderer.shader_program = SetupShaderProgram("runtime/vertext_shader.glsl", "runtime/fragment_shader.glsl").ReleaseValue();
@@ -469,53 +672,9 @@ int main() {
       HandleInputEvent(e, input);
       if (e.type == SDL_QUIT)
         quit = true;
-      if (e.type == SDL_KEYDOWN) {
+      if (e.type == SDL_KEYDOWN)
         if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
           quit = true;
-        else {
-          switch (e.key.keysym.sym) {
-          case 'a':
-            //game.player.Move(glm::vec3{-0.1, 0.0, 0.0});
-            break;
-          case 'd':
-            //game.player.Move(glm::vec3{0.1, 0.0, 0.0});
-            break;
-          case 'w':
-            //game.player.Move(glm::vec3{0.0, 0.1, 0.0});
-            break;
-          case 's':
-            //game.player.Move(glm::vec3{0.0, -0.1, 0.0});
-            break;
-          case 'q':
-            //game.player.Move(glm::vec3{0.0, 0.0, 0.1});
-            break;
-          case 'e':
-            //game.player.Move(glm::vec3{-0.0, 0.0, -0.1});
-            break;
-          }
-        }
-      } else if (e.type == SDL_MOUSEBUTTONDOWN &&
-                 e.button.button == SDL_BUTTON_LEFT) {
-        mouse_down = true;
-        start_x = e.button.x;
-        start_y = e.button.y;
-      } else if (e.type == SDL_MOUSEBUTTONUP &&
-                 e.button.button == SDL_BUTTON_LEFT) {
-        mouse_down = false;
-        move_x = 0.0f;
-        move_y = 0.0f;
-      } else if (e.type == SDL_MOUSEMOTION && mouse_down) {
-        int x = e.button.x;
-        int y = e.button.y;
-
-        int dx = x - start_x;
-        int dy = y - start_y;
-
-        start_x = x;
-        start_y = y;
-
-        game.player.Rotate(dx * 5.0, dy * 5.0);
-      }
     }
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
