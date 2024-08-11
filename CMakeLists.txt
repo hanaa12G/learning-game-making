@@ -7,6 +7,8 @@ find_package(GLEW REQUIRED)
 find_package(Stb REQUIRED)
 find_package(glm REQUIRED)
 
+add_subdirectory(game)
+
 add_library(game game/Game.cpp game/Camera.cpp)
 target_link_libraries(game glm::glm)
 target_compile_options(game PRIVATE -Wfatal-errors)

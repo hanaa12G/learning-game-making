@@ -1,6 +1,11 @@
 {
   "dependencies": [
     "stb",
-    "catch2"
+    "catch2",
+    "sdl2",
+    "glew",
+    "glm",
+    "opengl",
+    "glew"
   ]
 }
