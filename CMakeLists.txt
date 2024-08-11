@@ -9,6 +9,7 @@ find_package(glm REQUIRED)
 
 add_library(game game/Game.cpp game/Camera.cpp)
 target_link_libraries(game glm::glm)
+target_compile_options(game PRIVATE -Wfatal-errors)
 
 add_executable(platform main.cpp ShaderProgram.cpp OpenGLCamera.cpp)
 target_include_directories(platform PRIVATE ${Stb_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/game )
