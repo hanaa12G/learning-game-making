@@ -4,6 +4,7 @@
 #include <glm/geometric.hpp>
 #include <iostream>
 #include <map>
+#include "Collision.hpp"
 #include "Debug.cpp"
 #include <algorithm>
 #include <tuple>
@@ -302,6 +303,8 @@ no_firing:
 
 }
 
+std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D> objects, float distance, DistanceDetectorStrategy2D& distance_detector);
+
 
 extern "C" {
   void game_update(Game& game, Renderer& renderer, GameInput& input, float elapsed_time) {
@@ -321,7 +324,7 @@ extern "C" {
 
         scene_normal->player = Player({2, 10, 2});
         scene_normal->player.SetCamera(new Camera());
-
+\
         scene_normal->player.velocity = glm::vec3(0);
         scene_normal->player.acceleration = 0.0f;
         scene_normal->player.velocity_set_timestamp = chrono::high_resolution_clock::now();
@@ -407,4 +410,82 @@ extern "C" {
     }
 
   }
+
+  void game2d_init(Game2D* game) {
+    assert(game);
+
+    game->m_scenes.push_back(Scene2D());
+
+    Scene2D& scene = game->m_scenes.front();
+
+    GameObject2D player;
+    player.load_inputs([] (GameObject2D& player, GameInput const& inputs) {
+      glm::vec2 input_vec {};
+      if (inputs.buttons[GameInput::ButtonLeft].is_down) input_vec.x = -1.0f;
+      if (inputs.buttons[GameInput::ButtonRight].is_down) input_vec.x = 1.0f;
+      if (inputs.buttons[GameInput::ButtonUp].is_down) input_vec.y = 1.0f;
+      if (inputs.buttons[GameInput::ButtonDown].is_down) input_vec.y = -1.0f;
+
+      input_vec = glm::normalize(input_vec);
+
+      static const float velocity = 20.0f;
+
+      glm::vec2 velocity_vec = input_vec * velocity;
+
+      std::cout << "Player: [INFO] input processing result, velocity=" << velocity_vec << std::endl;
+
+      // TODO: Properly move player
+    });
+
+    scene.m_objects.push_back(std::move(player));
+
+  }
+
+
+  void game2d_update(Game2D* game, GameInput* input) {
+    assert(game);
+
+    std::unique_ptr<CollisionDetectionStrategy2D> collision_detector = std::make_unique<CollisionDetectionStrategy2DUseAABB>();
+    std::unique_ptr<DistanceDetectorStrategy2D> distance_detector = std::make_unique<DistanceDetectorStrategy2DUsePythagorean>();
+
+    Scene2D& scene = game->m_scenes.front();
+    Renderer2D& renderer = *game->m_renderer;
+
+    GameObject2D& player = scene.get_player();
+
+    player.process_inputs(*input);
+
+    std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 3, *distance_detector);
+
+    for (auto object: close_objects) {
+      bool collide = collision_detector->is_collide(*player.m_collision_body, *object->m_collision_body);
+      if (collide) {
+        collision_detector->resolve_collision(*player.m_collision_body, *object->m_collision_body);
+      }
+    }
+
+    for (auto const& object : scene.m_objects) {
+      if (object.m_visual_body)
+        renderer.draw(*object.m_visual_body);
+    }
+  }
+}
+
+GameObject2D& Scene2D::get_player(std::string name) {
+  return *std::find_if(m_objects.begin(), m_objects.end(),
+  [name] (auto const& object) {
+    return object.get_name() == name;
+  });
+}
+
+std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D> objects, float distance, DistanceDetectorStrategy2D& distance_detector) {
+  std::vector<GameObject2D*> result {};
+
+  for (GameObject2D & object : objects) {
+    if (not object.m_collision_body) continue;
+    if (distance > distance_detector.distance_between(*the.m_collision_body, *object.m_collision_body)) {
+      result.push_back(&object);
+    }
+  }
+  return result;
 }

@@ -25,7 +25,7 @@ struct GameObject2D {
 
     ~GameObject2D();
     
-    glm::vec2 m_origin;
+    glm::vec2 m_origin {};
     ObjectMetadata* m_meta { nullptr };
     CollisionBody2D* m_collision_body { nullptr };
     VisualBody2D* m_visual_body { nullptr };
@@ -48,8 +48,8 @@ struct ObjectMetadata {
     std::string m_id;
     std::string m_name;
 
-    std::string get_name() const;
-    std::string get_id() const;
+    std::string get_name() const { return m_name; }
+    std::string get_id() const { return m_id; }
 };
 
 

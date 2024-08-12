@@ -6,27 +6,28 @@
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <string>
 
 namespace chrono = std::chrono;
 
 #include "Camera.hpp"
-
+#include "Objects.hpp"
 
 struct GameObject {
   glm::vec3 pos;
-  char const* m_id;
+  std::string m_id;
   GameObject(glm::vec3 p, char const* id = "") : pos (p) , m_id {id} {}
 
   virtual ~GameObject() {}
-  virtual char const* Type() = 0;
+  virtual std::string Type() = 0;
   virtual char const* Texture() = 0;
-  char const* Id() { return m_id; }
+  std::string Id() { return m_id; }
 };
 
 struct Dot : public GameObject {
   using GameObject::GameObject;
 
-  char const* Type() override { return "Dot"; };
+  std::string Type() override { return "Dot"; };
   char const* Texture() override { return nullptr; }
 };
 
@@ -41,7 +42,7 @@ struct Line : public GameObject {
     return end - pos;
   }
 
-  char const* Type() override { return "Line"; };
+  std::string Type() override { return "Line"; };
   char const* Texture() override { return nullptr; }
 };
 struct Rectangle : public GameObject {
@@ -53,7 +54,7 @@ struct Rectangle : public GameObject {
   glm::vec3 TopLeft() { return glm::vec3 { pos.x - width / 2.0f, pos.y + height / 2.0f, 0.0f }; }
   glm::vec3 BottomRight() { return  glm::vec3 { pos.x + width / 2.0f, pos.y - height / 2.0f, 0.0f }; }
 
-  char const* Type() override { return "Rectangle"; };
+  std::string Type() override { return "Rectangle"; };
   char const* Texture() override { return nullptr; }
 };
 
@@ -61,7 +62,7 @@ struct Dirt : public GameObject {
   using GameObject::GameObject;
   static char const* texture_path;
 
-  char const* Type() override { return "Dirt"; }
+  std::string Type() override { return "Dirt"; }
   char const* Texture() override { return texture_path; }
 };
 
@@ -70,7 +71,7 @@ struct Rock : public GameObject {
   using GameObject::GameObject;
   static char const* texture_path;
 
-  char const* Type() override { return "Rock"; }
+  std::string Type() override { return "Rock"; }
   char const* Texture() override { return texture_path; }
 };
 
@@ -82,7 +83,7 @@ struct Player : public GameObject {
   chrono::time_point<chrono::high_resolution_clock> velocity_set_timestamp;
 
   Player(glm::vec3 position = {0, 0, 0}, glm::vec3 direction = {0, 0, 0}) : GameObject(position), dir(direction){}
-  char const* Type() override { return "Player"; }
+  std::string Type() override { return "Player"; }
   char const* Texture() override { assert(false); }
 
   void SetCamera(Camera* c) {
@@ -205,6 +206,26 @@ struct Game {
   }
 };
 
+struct Scene2D {
+  std::vector<GameObject2D> m_objects;
+
+  GameObject2D& get_player(std::string name = "Player");
+};
+
+struct VisualBody2D;
+
+struct Renderer2D {
+  virtual ~Renderer2D() {}
+
+  virtual void draw(VisualBody2D const&) = 0;
+};
+
+struct Game2D {
+  std::vector<Scene2D> m_scenes;
+
+  std::unique_ptr<Renderer2D> m_renderer;
+
+};
 
 bool collision_check(GameObject& a, GameObject& b);
 void collision_fix(GameObject& a, GameObject const& b);
@@ -214,4 +235,5 @@ void collision_fix(GameObject& a, GameObject const& b);
 extern "C" {
 
   void game_update(Game& game, Renderer& renderer, GameInput& input, float elapsed_time);
+  void game2d_update(Game2D* game, GameInput* input);
 }
