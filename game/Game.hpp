@@ -235,5 +235,6 @@ void collision_fix(GameObject& a, GameObject const& b);
 extern "C" {
 
   void game_update(Game& game, Renderer& renderer, GameInput& input, float elapsed_time);
-  void game2d_update(Game2D* game, GameInput* input);
+  void game2d_init(Game2D* game);
+  void game2d_update(Game2D* game, GameInput* input, float time_elapsed);
 }

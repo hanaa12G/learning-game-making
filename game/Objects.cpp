@@ -27,6 +27,26 @@ GameObject2D& GameObject2D::operator=(GameObject2D const& other)
         delete m_input_func;
         m_input_func = new InputFunc(*other.m_input_func);
     }
+    return *this;
+}
+
+GameObject2D::GameObject2D(GameObject2D&& other) noexcept
+{
+    m_position = std::move(other.m_position);
+    if (other.m_meta) std::swap(m_meta, other.m_meta);
+    if (other.m_collision_body) std::swap(m_collision_body, other.m_collision_body);
+    if (other.m_visual_body) std::swap(m_visual_body, other.m_visual_body);
+    if (other.m_input_func) std::swap(m_input_func, other.m_input_func);
+}
+
+GameObject2D& GameObject2D::operator=(GameObject2D&& other) noexcept
+{
+    m_position = std::move(other.m_position);
+    if (other.m_meta) std::swap(m_meta, other.m_meta);
+    if (other.m_collision_body) std::swap(m_collision_body, other.m_collision_body);
+    if (other.m_visual_body) std::swap(m_visual_body, other.m_visual_body);
+    if (other.m_input_func) std::swap(m_input_func, other.m_input_func);
+    return *this;
 }
 
 GameObject2D::~GameObject2D()
@@ -53,6 +73,25 @@ std::string GameObject2D::get_name() const
     return "";
 }
 
+void GameObject2D::set_name(std::string name)
+{
+    if (m_meta) {
+        return m_meta->set_name(name);
+    }
+}
+
+VisualBody2D& GameObject2D::get_visual_body()
+{
+    assert(m_visual_body);
+    return *m_visual_body;
+}
+
+void GameObject2D::set_visual_body(VisualBody2D v)
+{
+    m_visual_body = new VisualBody2D(std::move(v));
+}
+
+
 void GameObject2D::process_inputs(GameInput const& inputs)
 {
     if (m_input_func) (*m_input_func)(*this, inputs);
@@ -65,4 +104,12 @@ void GameObject2D::load_inputs(InputFunc func)
     }
 
     m_input_func = new InputFunc(func);
+}
+
+
+void GameObject2D::set_position(glm::vec2 pos)
+{
+    m_position = pos;
+    if (m_collision_body) m_collision_body->set_position(m_position);
+    if (m_visual_body) m_visual_body->set_position(m_position);
 }

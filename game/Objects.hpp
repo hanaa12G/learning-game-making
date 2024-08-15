@@ -20,12 +20,12 @@ struct GameObject2D {
     GameObject2D(GameObject2D const&);
     GameObject2D& operator=(GameObject2D const&);
 
-    GameObject2D(GameObject2D&&) = default;
-    GameObject2D& operator=(GameObject2D&&) = default;
+    GameObject2D(GameObject2D&&) noexcept;
+    GameObject2D& operator=(GameObject2D&&) noexcept;
 
     ~GameObject2D();
     
-    glm::vec2 m_origin {};
+    glm::vec2 m_position {};
     ObjectMetadata* m_meta { nullptr };
     CollisionBody2D* m_collision_body { nullptr };
     VisualBody2D* m_visual_body { nullptr };
@@ -34,14 +34,21 @@ struct GameObject2D {
 
     // Meta
     std::string get_name() const;
+    void set_name(std::string);
     std::string get_id() const;
 
     // CollisionBody2D
+
+    // VisualBody2D
+    VisualBody2D& get_visual_body();
+    void set_visual_body(VisualBody2D);
 
     // Input
     void process_inputs(GameInput const& inputs);
     void load_inputs(InputFunc func);
 
+
+    void set_position(glm::vec2 pos);
 };
 
 struct ObjectMetadata {
@@ -49,6 +56,7 @@ struct ObjectMetadata {
     std::string m_name;
 
     std::string get_name() const { return m_name; }
+    void set_name(std::string name) { m_name = name; }
     std::string get_id() const { return m_id; }
 };
 
@@ -78,11 +86,31 @@ using CollisionShape2D = std::variant<CollisionShape2DBox,
     CollisionShape2DCapsule>;
 
 struct CollisionBody2D {
-    glm::vec2 m_position;
-    glm::vec2 m_velocity;
-    glm::vec2 m_orientation;
+    glm::vec2 m_origin {};
+    glm::vec2 m_position {};
+    glm::vec2 m_velocity {};
+    glm::vec2 m_orientation {};
 
     CollisionShape2D m_shape;
+
+    void set_position(glm::vec2 pos) { m_position = pos + m_origin; } 
 };
 
-struct VisualBody2D {};
+struct VisualBody2D {
+    enum class Type {
+        Texture2D
+    };
+
+    Type m_type {Type::Texture2D};
+    glm::vec2 m_origin {};
+    glm::vec2 m_position {};
+    float m_width {0.0f};
+    float m_height {0.0f};
+    std::string m_texture_path {};
+
+    std::string texture_path() const { return m_texture_path; }
+    std::string key() const { return texture_path(); }
+
+    void set_position(glm::vec2 pos) { m_position = pos + m_origin; }
+    void set_texture_path(std::string path) { m_texture_path = path; }
+};

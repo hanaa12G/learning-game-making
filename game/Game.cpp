@@ -419,6 +419,13 @@ extern "C" {
     Scene2D& scene = game->m_scenes.front();
 
     GameObject2D player;
+    player.set_name("Player");
+
+    VisualBody2D sprite {};
+    sprite.set_texture_path("runtime/cobblestone.png");
+    player.set_visual_body(std::move(sprite));
+
+    player.set_position({ 0.0f, 0.0f });
     player.load_inputs([] (GameObject2D& player, GameInput const& inputs) {
       glm::vec2 input_vec {};
       if (inputs.buttons[GameInput::ButtonLeft].is_down) input_vec.x = -1.0f;
@@ -442,7 +449,7 @@ extern "C" {
   }
 
 
-  void game2d_update(Game2D* game, GameInput* input) {
+  void game2d_update(Game2D* game, GameInput* input, float time_elapsed) {
     assert(game);
 
     std::unique_ptr<CollisionDetectionStrategy2D> collision_detector = std::make_unique<CollisionDetectionStrategy2DUseAABB>();
@@ -464,9 +471,9 @@ extern "C" {
       }
     }
 
-    for (auto const& object : scene.m_objects) {
+    for (auto& object : scene.m_objects) {
       if (object.m_visual_body)
-        renderer.draw(*object.m_visual_body);
+        renderer.draw(object.get_visual_body());
     }
   }
 }

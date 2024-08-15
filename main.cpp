@@ -1,3 +1,4 @@
+#include "Renderer2DOpenGL.hpp"
 #include <SDL2/SDL.h>
 
 #include <GL/glew.h>
@@ -17,14 +18,14 @@
 #include <vector>
 #include <map>
 #include <chrono>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+
 
 #include "ErrorOr.hpp"
 #include "ShaderProgram.hpp"
 #include "Model.hpp"
 #include "OpenGLCamera.hpp"
 #include "game/Game.hpp"
+#include "Renderer2DOpenGL.hpp"
 
 namespace chrono = std::chrono;
 using namespace std::literals;
@@ -660,6 +661,10 @@ int main() {
   GameInput input {};
   GameInput prev_input {};
   OpenGLRenderer renderer;
+
+  Game2D game2d;
+  game2d_init(&game2d);
+  game2d.m_renderer = std::make_unique<Renderer2DOpenGL>();
   
   // renderer.shader_program = SetupShaderProgram("runtime/vertext_shader.glsl", "runtime/fragment_shader.glsl").ReleaseValue();
   auto frame_start = chrono::high_resolution_clock::now();
@@ -684,7 +689,8 @@ int main() {
     auto time_end = chrono::high_resolution_clock::now();
     float elapsed_time = chrono::duration_cast<chrono::duration<float>>(time_end - time_start).count();
     time_start = time_end;
-    game_update(game, renderer, input, elapsed_time);
+    // game_update(game, renderer, input, elapsed_time);
+    game2d_update(&game2d, &input, elapsed_time);
 
     SDL_GL_SwapWindow(window);
     prev_input = input;
