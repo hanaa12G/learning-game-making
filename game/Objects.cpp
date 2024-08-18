@@ -92,9 +92,9 @@ void GameObject2D::set_visual_body(VisualBody2D v)
 }
 
 
-void GameObject2D::process_inputs(GameInput const& inputs)
+void GameObject2D::process_inputs(GameInput const& inputs, float elapsed)
 {
-    if (m_input_func) (*m_input_func)(*this, inputs);
+    if (m_input_func) (*m_input_func)(*this, inputs, elapsed);
 }
 
 void GameObject2D::load_inputs(InputFunc func)
@@ -112,4 +112,8 @@ void GameObject2D::set_position(glm::vec2 pos)
     m_position = pos;
     if (m_collision_body) m_collision_body->set_position(m_position);
     if (m_visual_body) m_visual_body->set_position(m_position);
+}
+
+glm::vec2 GameObject2D::get_position() const {
+    return m_position;
 }

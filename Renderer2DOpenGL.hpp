@@ -11,6 +11,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "game/Debug.cpp"
+
 struct StbImageDeleter {
   void operator()(unsigned char *ptr) const { stbi_image_free(ptr); }
 };
@@ -46,12 +48,16 @@ struct Renderer2DOpenGL : public Renderer2D {
 
     Resource& resource = m_resources[body.key()];
     glm::mat4 trans(1.0f);
-    trans = glm::translate(trans, glm::vec3(-0.5f, -0.5f, 0.0f));
+    std::cout << "Renderer2DOpenGL: [INFO] Position: " << body.m_position << std::endl;
+    trans = glm::translate(trans, glm::vec3(body.m_position, 0.0f));
     
     auto& program = resource.m_program;
+    
+    glEnable(GL_BLEND);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, resource.m_texture);
     program.Use();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     program.SetUniformMatrix("transform", trans);
     glBindVertexArray(resource.m_vao);
@@ -65,14 +71,15 @@ struct Renderer2DOpenGL : public Renderer2D {
     glBindTexture(GL_TEXTURE_2D, resource.m_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     std::string texture_path = body.texture_path();
 
     if (std::filesystem::exists(texture_path)) {
 
       int image_width, image_height, nr_channel;
+      stbi_set_flip_vertically_on_load(true);
       auto texture_data = std::unique_ptr<unsigned char, StbImageDeleter>(
           stbi_load(texture_path.c_str(), &image_width, &image_height,
                     &nr_channel, 0),

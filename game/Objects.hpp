@@ -11,7 +11,7 @@ struct ObjectMetadata;
 struct GameInput;
 struct GameObject2D;
 
-using InputFunc = std::function<void (GameObject2D& obj, GameInput const&)>;
+using InputFunc = std::function<void (GameObject2D& obj, GameInput const&, float elapsed)>;
 
 struct GameObject2D {
 
@@ -25,7 +25,7 @@ struct GameObject2D {
 
     ~GameObject2D();
     
-    glm::vec2 m_position {};
+    glm::vec2 m_position {0.0f, 0.0f};
     ObjectMetadata* m_meta { nullptr };
     CollisionBody2D* m_collision_body { nullptr };
     VisualBody2D* m_visual_body { nullptr };
@@ -44,16 +44,17 @@ struct GameObject2D {
     void set_visual_body(VisualBody2D);
 
     // Input
-    void process_inputs(GameInput const& inputs);
+    void process_inputs(GameInput const& inputs, float elapsed);
     void load_inputs(InputFunc func);
 
 
     void set_position(glm::vec2 pos);
+    glm::vec2 get_position() const;
 };
 
 struct ObjectMetadata {
-    std::string m_id;
-    std::string m_name;
+    std::string m_id {};
+    std::string m_name {};
 
     std::string get_name() const { return m_name; }
     void set_name(std::string name) { m_name = name; }
@@ -63,9 +64,9 @@ struct ObjectMetadata {
 
 
 struct CollisionShape2DBox {
-    glm::vec2 m_origin;
-    float m_width;
-    float m_height;
+    glm::vec2 m_origin {0.0f, 0.0f};
+    float m_width {};
+    float m_height {};
 
 
     glm::vec2 top_left() const { return glm::vec2 { m_origin.x - m_width / 2, m_origin.y + m_height / 2 }; }
@@ -73,8 +74,8 @@ struct CollisionShape2DBox {
 };
 
 struct CollisionShape2DSphere {
-    glm::vec2 m_origin;
-    float m_radius;
+    glm::vec2 m_origin {0.0f, 0.0f};
+    float m_radius {};
 };
 
 struct CollisionShape2DCapsule {
@@ -86,12 +87,12 @@ using CollisionShape2D = std::variant<CollisionShape2DBox,
     CollisionShape2DCapsule>;
 
 struct CollisionBody2D {
-    glm::vec2 m_origin {};
-    glm::vec2 m_position {};
-    glm::vec2 m_velocity {};
-    glm::vec2 m_orientation {};
+    glm::vec2 m_origin {0.0f, 0.0f};
+    glm::vec2 m_position {0.0f, 0.0f};
+    glm::vec2 m_velocity {0.0f, 0.0f};
+    glm::vec2 m_orientation {0.0f, 0.0f};
 
-    CollisionShape2D m_shape;
+    CollisionShape2D m_shape {};
 
     void set_position(glm::vec2 pos) { m_position = pos + m_origin; } 
 };
@@ -102,10 +103,11 @@ struct VisualBody2D {
     };
 
     Type m_type {Type::Texture2D};
-    glm::vec2 m_origin {};
-    glm::vec2 m_position {};
+    glm::vec2 m_origin {0.0f, 0.0f};
+    glm::vec2 m_position {0.0f, 0.0f};
     float m_width {0.0f};
     float m_height {0.0f};
+    float m_scaling {1.0f};
     std::string m_texture_path {};
 
     std::string texture_path() const { return m_texture_path; }
@@ -113,4 +115,5 @@ struct VisualBody2D {
 
     void set_position(glm::vec2 pos) { m_position = pos + m_origin; }
     void set_texture_path(std::string path) { m_texture_path = path; }
+    void set_scaling(float scaling) { m_scaling = scaling; }
 };

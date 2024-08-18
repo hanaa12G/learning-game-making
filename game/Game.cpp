@@ -422,24 +422,45 @@ extern "C" {
     player.set_name("Player");
 
     VisualBody2D sprite {};
-    sprite.set_texture_path("runtime/cobblestone.png");
+    sprite.set_texture_path("runtime/assets/duck.png");
     player.set_visual_body(std::move(sprite));
+    player.get_visual_body().set_scaling(0.2f);
 
     player.set_position({ 0.0f, 0.0f });
-    player.load_inputs([] (GameObject2D& player, GameInput const& inputs) {
-      glm::vec2 input_vec {};
-      if (inputs.buttons[GameInput::ButtonLeft].is_down) input_vec.x = -1.0f;
-      if (inputs.buttons[GameInput::ButtonRight].is_down) input_vec.x = 1.0f;
-      if (inputs.buttons[GameInput::ButtonUp].is_down) input_vec.y = 1.0f;
-      if (inputs.buttons[GameInput::ButtonDown].is_down) input_vec.y = -1.0f;
+    player.load_inputs([] (GameObject2D& player, GameInput const& inputs, float elapsed) {
+      glm::vec2 input_vec {0.0f, 0.0f};
 
-      input_vec = glm::normalize(input_vec);
+      if (inputs.buttons[GameInput::ButtonLeft].is_down) {
+        input_vec.x = -1.0f;
+      }
+      if (inputs.buttons[GameInput::ButtonRight].is_down) {
+        input_vec.x = 1.0f;
+      }
+      if (inputs.buttons[GameInput::ButtonUp].is_down) {
+        input_vec.y = 1.0f;
+      }
+      if (inputs.buttons[GameInput::ButtonDown].is_down) {
+        input_vec.y = -1.0f;
+      }
 
+      std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
+ 
+      bool need_normalize = glm::length(input_vec) != 0.0f;
+      if (need_normalize) {
+        std::cout << "Player: [INFO] need normalize input vec as length is " << glm::length(input_vec) << std::endl;
+       input_vec = glm::normalize(input_vec);
+      }
+      std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
       static const float velocity = 20.0f;
-
+      
       glm::vec2 velocity_vec = input_vec * velocity;
+      glm::vec2 movement = velocity_vec * elapsed;
+      glm::vec2 current_position = player.get_position();
+      glm::vec2 new_position = current_position + movement;
 
-      std::cout << "Player: [INFO] input processing result, velocity=" << velocity_vec << std::endl;
+      std::cout << "Player: [INFO] input processing result, velocity=" << input_vec << ", elapsed: " << elapsed << ", movement: " << movement << std::endl;
+
+      player.set_position(new_position);
 
       // TODO: Properly move player
     });
@@ -460,7 +481,7 @@ extern "C" {
 
     GameObject2D& player = scene.get_player();
 
-    player.process_inputs(*input);
+    player.process_inputs(*input, time_elapsed);
 
     std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 3, *distance_detector);
 
