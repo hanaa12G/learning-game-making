@@ -53,11 +53,11 @@ struct Renderer2DOpenGL : public Renderer2D {
     
     auto& program = resource.m_program;
     
-    glEnable(GL_BLEND);
+    // glEnable(GL_BLEND);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, resource.m_texture);
     program.Use();
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     program.SetUniformMatrix("transform", trans);
     glBindVertexArray(resource.m_vao);
