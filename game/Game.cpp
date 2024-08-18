@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <tuple>
 
+#include "Objects.hpp"
+#include "RandomGenerator.hpp"
+
 char const* Dirt::texture_path = "/home/wsluser/Workspace/game/runtime/coarse_dirt.png";
 char const* Rock::texture_path = "/home/wsluser/Workspace/game/runtime/cobblestone.png";
 
@@ -451,7 +454,7 @@ extern "C" {
        input_vec = glm::normalize(input_vec);
       }
       std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
-      static const float velocity = 20.0f;
+      static const float velocity = 1.0f;
       
       glm::vec2 velocity_vec = input_vec * velocity;
       glm::vec2 movement = velocity_vec * elapsed;
@@ -466,6 +469,29 @@ extern "C" {
     });
 
     scene.m_objects.push_back(std::move(player));
+
+
+    std::unique_ptr<RandomGenerator> randommizer = std::make_unique<RandomGeneratorUseStd>();
+    GameObject2D trees[4];
+    int i = 0;
+    for (auto& tree: trees) {
+
+      // TODO (hanasou): Pain point found. Should set visual body before setting position because
+      // doing the oposite will not update where we will draw (all objects will be same spot when drawed)
+      VisualBody2D visual;
+      tree.set_visual_body(std::move(visual));
+      tree.get_visual_body().set_texture_path("runtime/assets/tree.png");
+      tree.get_visual_body().set_scaling(0.4f);
+
+      float position[2] = {};
+      randommizer->generateFloat(position, sizeof(position) / sizeof(float), -1.0f, 1.0f);
+      std::cout << "Game: [DEBUG] tree " << i++ << ", position: " << position[0] << ", " << position[1] << std::endl;
+
+      tree.set_position({position[0], position[1]});
+
+
+      scene.m_objects.push_back(std::move(tree));
+    }
 
   }
 

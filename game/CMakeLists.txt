@@ -5,6 +5,7 @@ set(SOURCE
     Objects.cpp
     Collision.cpp
     Camera.cpp
+    RandomGenerator.cpp
 )
 
 add_library(game2

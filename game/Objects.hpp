@@ -107,7 +107,7 @@ struct VisualBody2D {
     glm::vec2 m_position {0.0f, 0.0f};
     float m_width {0.0f};
     float m_height {0.0f};
-    float m_scaling {1.0f};
+    glm::vec2 m_scaling {1.0f, 1.0f};
     std::string m_texture_path {};
 
     std::string texture_path() const { return m_texture_path; }
@@ -115,5 +115,6 @@ struct VisualBody2D {
 
     void set_position(glm::vec2 pos) { m_position = pos + m_origin; }
     void set_texture_path(std::string path) { m_texture_path = path; }
-    void set_scaling(float scaling) { m_scaling = scaling; }
+    void set_scaling(float scaling) { m_scaling = glm::vec2(scaling); }
+    glm::vec2 get_scaling() const { return m_scaling; }
 };

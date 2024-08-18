@@ -50,6 +50,7 @@ struct Renderer2DOpenGL : public Renderer2D {
     glm::mat4 trans(1.0f);
     std::cout << "Renderer2DOpenGL: [INFO] Position: " << body.m_position << std::endl;
     trans = glm::translate(trans, glm::vec3(body.m_position, 0.0f));
+    trans = glm::scale(trans, glm::vec3(body.get_scaling(), 1.0f));
     
     auto& program = resource.m_program;
     
