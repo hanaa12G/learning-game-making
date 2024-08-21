@@ -57,6 +57,15 @@ GameObject2D::~GameObject2D()
     delete m_input_func;
 }
 
+bool GameObject2D::operator==(GameObject2D const& other) const
+{
+    return m_meta == other.m_meta and
+        m_collision_body == other.m_collision_body and
+        m_visual_body == other.m_visual_body and
+        m_input_func == other.m_input_func and
+        m_position == other.m_position;
+}
+
 std::string GameObject2D::get_id() const
 {
     if (m_meta) {
@@ -78,6 +87,17 @@ void GameObject2D::set_name(std::string name)
     if (m_meta) {
         return m_meta->set_name(name);
     }
+}
+
+CollisionBody2D& GameObject2D::get_collision_body()
+{
+    assert(m_collision_body);
+    return *m_collision_body;
+}
+
+void GameObject2D::set_collision_body(CollisionBody2D body)
+{
+    m_collision_body = new CollisionBody2D(body);
 }
 
 VisualBody2D& GameObject2D::get_visual_body()

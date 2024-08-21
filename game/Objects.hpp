@@ -24,6 +24,8 @@ struct GameObject2D {
     GameObject2D& operator=(GameObject2D&&) noexcept;
 
     ~GameObject2D();
+
+    bool operator==(GameObject2D const& other) const;
     
     glm::vec2 m_position {0.0f, 0.0f};
     ObjectMetadata* m_meta { nullptr };
@@ -38,6 +40,8 @@ struct GameObject2D {
     std::string get_id() const;
 
     // CollisionBody2D
+    CollisionBody2D& get_collision_body();
+    void set_collision_body(CollisionBody2D);
 
     // VisualBody2D
     VisualBody2D& get_visual_body();
@@ -74,6 +78,11 @@ struct CollisionShape2DBox {
 };
 
 struct CollisionShape2DSphere {
+
+    CollisionShape2DSphere(float radius = 0.0f) : m_radius {radius} {
+
+    }
+
     glm::vec2 m_origin {0.0f, 0.0f};
     float m_radius {};
 };
@@ -82,7 +91,9 @@ struct CollisionShape2DCapsule {
 
 };
 
-using CollisionShape2D = std::variant<CollisionShape2DBox,
+using CollisionShape2D = std::variant<
+    int,
+    CollisionShape2DBox,
     CollisionShape2DSphere,
     CollisionShape2DCapsule>;
 
@@ -95,6 +106,8 @@ struct CollisionBody2D {
     CollisionShape2D m_shape {};
 
     void set_position(glm::vec2 pos) { m_position = pos + m_origin; } 
+    void set_origin(glm::vec2 origin) { m_origin = origin; }
+    void set_shape(CollisionShape2D shape) { m_shape = shape; }
 };
 
 struct VisualBody2D {

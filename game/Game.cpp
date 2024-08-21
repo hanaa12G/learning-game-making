@@ -306,7 +306,7 @@ no_firing:
 
 }
 
-std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D> objects, float distance, DistanceDetectorStrategy2D& distance_detector);
+std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D>& objects, float distance, DistanceDetectorStrategy2D& distance_detector);
 
 
 extern "C" {
@@ -427,7 +427,11 @@ extern "C" {
     VisualBody2D sprite {};
     sprite.set_texture_path("runtime/assets/duck.png");
     player.set_visual_body(std::move(sprite));
-    player.get_visual_body().set_scaling(0.2f);
+    // player.get_visual_body().set_scaling(0.2f);
+
+    CollisionBody2D collision_body {};
+    collision_body.set_shape(CollisionShape2DSphere(16));
+    player.set_collision_body(std::move(collision_body));
 
     player.set_position({ 0.0f, 0.0f });
     player.load_inputs([] (GameObject2D& player, GameInput const& inputs, float elapsed) {
@@ -454,7 +458,7 @@ extern "C" {
        input_vec = glm::normalize(input_vec);
       }
       std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
-      static const float velocity = 1.0f;
+      static const float velocity = 2.0f;
       
       glm::vec2 velocity_vec = input_vec * velocity;
       glm::vec2 movement = velocity_vec * elapsed;
@@ -481,10 +485,15 @@ extern "C" {
       VisualBody2D visual;
       tree.set_visual_body(std::move(visual));
       tree.get_visual_body().set_texture_path("runtime/assets/tree.png");
-      tree.get_visual_body().set_scaling(0.4f);
+      // tree.get_visual_body().set_scaling(0.4f);
+
+      CollisionBody2D collision_body {};
+      collision_body.set_shape(CollisionShape2DSphere(10));
+      tree.set_collision_body(std::move(collision_body));
+      tree.get_collision_body().set_origin({0.0f, -2.0f});
 
       float position[2] = {};
-      randommizer->generateFloat(position, sizeof(position) / sizeof(float), -1.0f, 1.0f);
+      randommizer->generateFloat(position, sizeof(position) / sizeof(float), -3.0f, 3.0f);
       std::cout << "Game: [DEBUG] tree " << i++ << ", position: " << position[0] << ", " << position[1] << std::endl;
 
       tree.set_position({position[0], position[1]});
@@ -532,10 +541,11 @@ GameObject2D& Scene2D::get_player(std::string name) {
   });
 }
 
-std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D> objects, float distance, DistanceDetectorStrategy2D& distance_detector) {
+std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D>& objects, float distance, DistanceDetectorStrategy2D& distance_detector) {
   std::vector<GameObject2D*> result {};
 
   for (GameObject2D & object : objects) {
+    if (the == object) continue;
     if (not object.m_collision_body) continue;
     if (distance > distance_detector.distance_between(*the.m_collision_body, *object.m_collision_body)) {
       result.push_back(&object);

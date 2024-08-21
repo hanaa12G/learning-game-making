@@ -2,6 +2,7 @@
 #include "ShaderProgram.hpp"
 #include "game/Game.hpp"
 #include <filesystem>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <iostream>
 #include <string>
@@ -50,7 +51,8 @@ struct Renderer2DOpenGL : public Renderer2D {
     glm::mat4 trans(1.0f);
     std::cout << "Renderer2DOpenGL: [INFO] Position: " << body.m_position << std::endl;
     trans = glm::translate(trans, glm::vec3(body.m_position, 0.0f));
-    trans = glm::scale(trans, glm::vec3(body.get_scaling(), 1.0f));
+    glm::mat4 projection = glm::ortho(-1.0f * 3, 1.0f * 3, -1.0f * 3, 1.0f * 3, -1.0f, 1.0f);
+    // trans = glm::scale(trans, glm::vec3(body.get_scaling(), 1.0f));
     
     auto& program = resource.m_program;
     
@@ -61,6 +63,7 @@ struct Renderer2DOpenGL : public Renderer2D {
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     program.SetUniformMatrix("transform", trans);
+    program.SetUniformMatrix("projection", projection);
     glBindVertexArray(resource.m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 

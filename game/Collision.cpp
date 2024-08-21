@@ -38,7 +38,16 @@ bool CollisionDetectionStrategy2DUseAABB::is_collide(CollisionBody2D const& a,
     };
 
     static auto is_collide_svs = [] (auto const& a, auto const& b) -> bool {
-        return false;
+        CollisionShape2DSphere const& sphere_a = std::get<CollisionShape2DSphere>(a.m_shape);
+        CollisionShape2DSphere const& sphere_b = std::get<CollisionShape2DSphere>(b.m_shape);
+
+        float sphere_radius_a = sphere_a.m_radius;
+        float sphere_radius_b = sphere_b.m_radius;
+        float larger_radius = std::max(sphere_radius_a, sphere_radius_b);
+
+        DistanceDetectorStrategy2DUsePythagorean distance_detector;
+        float distance = distance_detector.distance_between(a, b);
+        return distance < larger_radius;
     };
 
     static auto is_collide_svc = [] (auto const& a, auto const& b) -> bool {
@@ -67,7 +76,10 @@ bool CollisionDetectionStrategy2DUseAABB::is_collide(CollisionBody2D const& a,
         is_collide_cvb, is_collide_cvs, is_collide_cvc
     };
 
-    return funcs.at(a.m_shape.index() * b.m_shape.index()) (a, b);
+    bool collided = funcs.at(a.m_shape.index() * b.m_shape.index()) (a, b);
+    if (collided)
+        std::cout << "Collision: [INFO] Collision found" << std::endl;
+    return collided;
 }
 
 void CollisionDetectionStrategy2DUseAABB::resolve_collision(CollisionBody2D& a,
