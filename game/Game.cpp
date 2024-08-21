@@ -458,7 +458,7 @@ extern "C" {
        input_vec = glm::normalize(input_vec);
       }
       std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
-      static const float velocity = 2.0f;
+      static const float velocity =  100.0f;
       
       glm::vec2 velocity_vec = input_vec * velocity;
       glm::vec2 movement = velocity_vec * elapsed;
@@ -493,7 +493,7 @@ extern "C" {
       tree.get_collision_body().set_origin({0.0f, -2.0f});
 
       float position[2] = {};
-      randommizer->generateFloat(position, sizeof(position) / sizeof(float), -3.0f, 3.0f);
+      randommizer->generateFloat(position, sizeof(position) / sizeof(float), -100.0f, 100.0f);
       std::cout << "Game: [DEBUG] tree " << i++ << ", position: " << position[0] << ", " << position[1] << std::endl;
 
       tree.set_position({position[0], position[1]});
@@ -518,7 +518,7 @@ extern "C" {
 
     player.process_inputs(*input, time_elapsed);
 
-    std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 3, *distance_detector);
+    std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 100, *distance_detector);
 
     for (auto object: close_objects) {
       bool collide = collision_detector->is_collide(*player.m_collision_body, *object->m_collision_body);

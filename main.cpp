@@ -665,6 +665,7 @@ int main() {
   Game2D game2d;
   game2d_init(&game2d);
   game2d.m_renderer = std::make_unique<Renderer2DOpenGL>();
+  game2d.m_renderer->set_screen_size(640, 480);
   
   // renderer.shader_program = SetupShaderProgram("runtime/vertext_shader.glsl", "runtime/fragment_shader.glsl").ReleaseValue();
   auto frame_start = chrono::high_resolution_clock::now();

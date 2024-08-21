@@ -218,12 +218,14 @@ struct Renderer2D {
   virtual ~Renderer2D() {}
 
   virtual void draw(VisualBody2D const&) = 0;
+  virtual void set_screen_size(unsigned, unsigned) = 0;
 };
 
 struct Game2D {
   std::vector<Scene2D> m_scenes;
 
   std::unique_ptr<Renderer2D> m_renderer;
+  
 
 };
 

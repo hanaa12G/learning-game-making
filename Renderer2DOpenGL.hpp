@@ -34,7 +34,14 @@ struct Renderer2DOpenGL : public Renderer2D {
 
   };
 
-  std::unordered_map<std::string, Resource> m_resources;
+  std::unordered_map<std::string, Resource> m_resources {};
+  unsigned m_screen_width { 0u };
+  unsigned m_screen_height { 0u };
+
+  void set_screen_size(unsigned width, unsigned height) override {
+    m_screen_width = width;
+    m_screen_height = height;
+  }
 
   virtual void draw(VisualBody2D const &body) override {
     if (body.m_type == VisualBody2D::Type::Texture2D) {
@@ -49,10 +56,23 @@ struct Renderer2DOpenGL : public Renderer2D {
 
     Resource& resource = m_resources[body.key()];
     glm::mat4 trans(1.0f);
-    std::cout << "Renderer2DOpenGL: [INFO] Position: " << body.m_position << std::endl;
-    trans = glm::translate(trans, glm::vec3(body.m_position, 0.0f));
-    glm::mat4 projection = glm::ortho(-1.0f * 3, 1.0f * 3, -1.0f * 3, 1.0f * 3, -1.0f, 1.0f);
-    // trans = glm::scale(trans, glm::vec3(body.get_scaling(), 1.0f));
+
+    glm::vec3 object_screen_position = {
+      body.m_position.x / (m_screen_width / 2.0f),
+      body.m_position.y / (m_screen_height / 2.0f),
+      0.0f
+    };
+
+    std::cout << "Renderer2DOpenGL: [INFO] In game position: " << body.m_position
+      << ", screen position: " << object_screen_position
+      << std::endl;
+    trans = glm::translate(trans, object_screen_position);
+    glm::mat4 projection = glm::ortho(-1.0f * 0.2f, 1.0f * 0.2f, -1.0f * 0.2f, 1.0f * 0.2f, -1.0f, 1.0f);
+    
+    // glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+
+    float scaling = 32.0 / 640.0f;
+    trans = glm::scale(trans, glm::vec3(scaling, scaling, 1.0f));
     
     auto& program = resource.m_program;
     
