@@ -10,6 +10,7 @@ GameObject2D::GameObject2D(GameObject2D const& other) : GameObject2D()
     if (other.m_collision_body) m_collision_body = new CollisionBody2D(*other.m_collision_body);
     if (other.m_visual_body) m_visual_body = new VisualBody2D(*other.m_visual_body);
     if (other.m_input_func) m_input_func = new InputFunc(*other.m_input_func);
+    if (other.m_update_func) m_update_func = new UpdateFunc(*other.m_update_func);
 }
 
 GameObject2D& GameObject2D::operator=(GameObject2D const& other)
@@ -27,25 +28,32 @@ GameObject2D& GameObject2D::operator=(GameObject2D const& other)
         delete m_input_func;
         m_input_func = new InputFunc(*other.m_input_func);
     }
+
+    if (other.m_update_func) {
+        delete m_update_func;
+        m_update_func = new UpdateFunc(*other.m_update_func);
+    }
     return *this;
 }
 
 GameObject2D::GameObject2D(GameObject2D&& other) noexcept
 {
     m_position = std::move(other.m_position);
-    if (other.m_meta) std::swap(m_meta, other.m_meta);
-    if (other.m_collision_body) std::swap(m_collision_body, other.m_collision_body);
-    if (other.m_visual_body) std::swap(m_visual_body, other.m_visual_body);
-    if (other.m_input_func) std::swap(m_input_func, other.m_input_func);
+    std::swap(m_meta, other.m_meta);
+    std::swap(m_collision_body, other.m_collision_body);
+    std::swap(m_visual_body, other.m_visual_body);
+    std::swap(m_input_func, other.m_input_func);
+    std::swap(m_update_func, other.m_update_func);
 }
 
 GameObject2D& GameObject2D::operator=(GameObject2D&& other) noexcept
 {
     m_position = std::move(other.m_position);
-    if (other.m_meta) std::swap(m_meta, other.m_meta);
-    if (other.m_collision_body) std::swap(m_collision_body, other.m_collision_body);
-    if (other.m_visual_body) std::swap(m_visual_body, other.m_visual_body);
-    if (other.m_input_func) std::swap(m_input_func, other.m_input_func);
+    std::swap(m_meta, other.m_meta);
+    std::swap(m_collision_body, other.m_collision_body);
+    std::swap(m_visual_body, other.m_visual_body);
+    std::swap(m_input_func, other.m_input_func);
+    std::swap(m_update_func, other.m_update_func);
     return *this;
 }
 
@@ -55,6 +63,7 @@ GameObject2D::~GameObject2D()
     delete m_collision_body;
     delete m_visual_body;
     delete m_input_func;
+    delete m_update_func;
 }
 
 bool GameObject2D::operator==(GameObject2D const& other) const
@@ -63,6 +72,7 @@ bool GameObject2D::operator==(GameObject2D const& other) const
         m_collision_body == other.m_collision_body and
         m_visual_body == other.m_visual_body and
         m_input_func == other.m_input_func and
+        m_update_func == other.m_update_func and
         m_position == other.m_position;
 }
 
@@ -124,6 +134,17 @@ void GameObject2D::load_inputs(InputFunc func)
     }
 
     m_input_func = new InputFunc(func);
+}
+
+void GameObject2D::on_update(UpdateFunc func)
+{
+    if (m_update_func) delete m_update_func;
+    m_update_func = new UpdateFunc(func);
+}
+
+void GameObject2D::update(float elapsed)
+{
+    if (m_update_func) (*m_update_func)(*this, elapsed);
 }
 
 

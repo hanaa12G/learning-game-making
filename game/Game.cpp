@@ -431,6 +431,7 @@ extern "C" {
 
     CollisionBody2D collision_body {};
     collision_body.set_shape(CollisionShape2DSphere(16));
+    collision_body.set_immovable(false);
     player.set_collision_body(std::move(collision_body));
 
     player.set_position({ 0.0f, 0.0f });
@@ -449,27 +450,78 @@ extern "C" {
       if (inputs.buttons[GameInput::ButtonDown].is_down) {
         input_vec.y = -1.0f;
       }
-
-      std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
  
       bool need_normalize = glm::length(input_vec) != 0.0f;
       if (need_normalize) {
         std::cout << "Player: [INFO] need normalize input vec as length is " << glm::length(input_vec) << std::endl;
        input_vec = glm::normalize(input_vec);
+        std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
       }
-      std::cout << "Player: [INFO] input vec: " << input_vec << std::endl;
-      static const float velocity =  100.0f;
+
+      static float const acceleration = 300.0f;
+
+      player.get_collision_body().set_acceleration(acceleration * input_vec);
+
+      // static const float velocity =  100.0f;
       
-      glm::vec2 velocity_vec = input_vec * velocity;
-      glm::vec2 movement = velocity_vec * elapsed;
-      glm::vec2 current_position = player.get_position();
-      glm::vec2 new_position = current_position + movement;
+      // glm::vec2 velocity_vec = input_vec * velocity;
+      // glm::vec2 movement = velocity_vec * elapsed;
+      // glm::vec2 current_position = player.get_position();
+      // glm::vec2 new_position = current_position + movement;
 
-      std::cout << "Player: [INFO] input processing result, velocity=" << input_vec << ", elapsed: " << elapsed << ", movement: " << movement << std::endl;
+      // std::cout << "Player: [INFO] input processing result, velocity=" << input_vec << ", elapsed: " << elapsed << ", movement: " << movement << std::endl;
 
-      player.set_position(new_position);
+      // player.set_position(new_position);
 
       // TODO: Properly move player
+    });
+
+    // what to do each frame
+    player.on_update([] (GameObject2D& player, float elapsed) {
+      CollisionBody2D& physical_body = player.get_collision_body();
+
+      bool is_under_acceleration = glm::length(physical_body.m_acceleration);
+      bool is_moving = glm::length(physical_body.m_velocity);
+      bool is_under_friction = not is_under_acceleration and is_moving;
+
+      player.set_position(
+        player.get_position() + physical_body.get_velocity() * elapsed
+      );
+
+      if (is_under_friction) {
+        static float const friction_value = 100.0f;
+        glm::vec2 moving_direction = glm::normalize(physical_body.m_velocity);
+        glm::vec2 friction_vec = -moving_direction;
+        glm::vec2 friction = friction_vec * friction_value;
+
+        // slow down the body
+        physical_body.set_velocity(
+          physical_body.get_velocity() + friction * elapsed
+        );
+
+        std::cout << "Game: [DEBUG] is under friction, velocity: " << physical_body.get_velocity() << std::endl;
+
+      }
+      else if (is_under_acceleration) {
+        physical_body.set_velocity(
+          physical_body.get_velocity() + physical_body.get_acceleration() * elapsed
+        );
+
+        static float const max_velocity = 100.0f;
+        if (glm::length(physical_body.get_velocity()) >= max_velocity) {
+          physical_body.set_velocity(
+            glm::normalize(physical_body.get_velocity()) * max_velocity
+          );
+        }
+        
+        std::cout << "Game: [DEBUG] is under acceleration, velocity: " << physical_body.get_velocity() << std::endl;
+
+      }
+
+      if (glm::length(physical_body.get_velocity()) < 0.1)
+      {
+        physical_body.set_velocity({0.0f, 0.0f});
+      }
     });
 
     scene.m_objects.push_back(std::move(player));
@@ -518,12 +570,17 @@ extern "C" {
 
     player.process_inputs(*input, time_elapsed);
 
+    for (auto& object: scene.m_objects)
+    {
+      object.update(time_elapsed);
+    }
+
     std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 100, *distance_detector);
 
     for (auto object: close_objects) {
       bool collide = collision_detector->is_collide(*player.m_collision_body, *object->m_collision_body);
       if (collide) {
-        collision_detector->resolve_collision(*player.m_collision_body, *object->m_collision_body);
+        // collision_detector->resolve_collision(*player.m_collision_body, *object->m_collision_body);
       }
     }
 

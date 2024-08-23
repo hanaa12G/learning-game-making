@@ -12,6 +12,7 @@ struct GameInput;
 struct GameObject2D;
 
 using InputFunc = std::function<void (GameObject2D& obj, GameInput const&, float elapsed)>;
+using UpdateFunc = std::function<void (GameObject2D& obj, float elapsed)>;
 
 struct GameObject2D {
 
@@ -32,6 +33,7 @@ struct GameObject2D {
     CollisionBody2D* m_collision_body { nullptr };
     VisualBody2D* m_visual_body { nullptr };
     InputFunc* m_input_func { nullptr };
+    UpdateFunc* m_update_func {nullptr};
 
 
     // Meta
@@ -50,6 +52,10 @@ struct GameObject2D {
     // Input
     void process_inputs(GameInput const& inputs, float elapsed);
     void load_inputs(InputFunc func);
+
+    // Update
+    void update(float elapsed);
+    void on_update(UpdateFunc func);
 
 
     void set_position(glm::vec2 pos);
@@ -101,13 +107,22 @@ struct CollisionBody2D {
     glm::vec2 m_origin {0.0f, 0.0f};
     glm::vec2 m_position {0.0f, 0.0f};
     glm::vec2 m_velocity {0.0f, 0.0f};
+    glm::vec2 m_acceleration { 0.0f, 0.0f };
     glm::vec2 m_orientation {0.0f, 0.0f};
+    
+    bool m_immovable { true };
 
     CollisionShape2D m_shape {};
 
     void set_position(glm::vec2 pos) { m_position = pos + m_origin; } 
     void set_origin(glm::vec2 origin) { m_origin = origin; }
     void set_shape(CollisionShape2D shape) { m_shape = shape; }
+
+    void set_acceleration(glm::vec2 acceleration) { m_acceleration = acceleration; }
+    glm::vec2 get_acceleration() const { return m_acceleration; }
+    void set_velocity(glm::vec2 velocity) { m_velocity = velocity; }
+    glm::vec2 get_velocity() const { return m_velocity; }
+    void set_immovable(bool flag) { m_immovable = flag; }
 };
 
 struct VisualBody2D {

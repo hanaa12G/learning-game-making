@@ -74,8 +74,8 @@ bool CollisionDetectionStrategy2DUseAABB::is_collide(CollisionBody2D const &a,
       is_collide_svb, is_collide_svs, is_collide_svc,
       is_collide_cvb, is_collide_cvs, is_collide_cvc};
 
-  std::cout << "Collision: [DEBUG] a.body: " << a.m_position  << ", b.body"
-  << b.m_position << std::endl;
+  // std::cout << "Collision: [DEBUG] a.body: " << a.m_position  << ", b.body"
+  // << b.m_position << std::endl;
   bool collided = funcs.at(a.m_shape.index() * b.m_shape.index())(a, b);
   if (collided)
     std::cout << "Collision: [INFO] Collision found" << std::endl;
@@ -92,8 +92,9 @@ float DistanceDetectorStrategy2DUsePythagorean::distance_between(
 
   float distance = std::sqrt(std::pow(diff_x, 2) + std::pow(diff_y, 2));
 
-  std::cout << "DistanceDetectorStrategy2DUsePythagorean: [DEBUG] " << distance
-            << std::endl;
+  // std::cout << "DistanceDetectorStrategy2DUsePythagorean: [DEBUG] " <<
+  // distance
+  //           << std::endl;
 
   return distance;
 }

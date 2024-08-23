@@ -63,9 +63,9 @@ struct Renderer2DOpenGL : public Renderer2D {
       0.0f
     };
 
-    std::cout << "Renderer2DOpenGL: [INFO] In game position: " << body.m_position
-      << ", screen position: " << object_screen_position
-      << std::endl;
+    // std::cout << "Renderer2DOpenGL: [INFO] In game position: " << body.m_position
+    //   << ", screen position: " << object_screen_position
+    //   << std::endl;
     trans = glm::translate(trans, object_screen_position);
     glm::mat4 projection = glm::ortho(-1.0f * 0.2f, 1.0f * 0.2f, -1.0f * 0.2f, 1.0f * 0.2f, -1.0f, 1.0f);
     
