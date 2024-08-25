@@ -307,7 +307,7 @@ no_firing:
 }
 
 std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the, std::vector<GameObject2D>& objects, float distance, DistanceDetectorStrategy2D& distance_detector);
-
+VisualBody2D get_simple_visual_body_for(CollisionBody2D const& body);
 
 extern "C" {
   void game_update(Game& game, Renderer& renderer, GameInput& input, float elapsed_time) {
@@ -587,6 +587,10 @@ extern "C" {
     for (auto& object : scene.m_objects) {
       if (object.m_visual_body)
         renderer.draw(object.get_visual_body());
+            
+      // NOTE (hanasou): Draw collision body OVER visual body
+      if (object.m_collision_body)
+        renderer.draw(get_simple_visual_body_for(object.get_collision_body()));
     }
   }
 }
@@ -609,4 +613,37 @@ std::vector<GameObject2D*> find_close_objects_related_to(GameObject2D const& the
     }
   }
   return result;
+}
+
+VisualBody2D get_simple_visual_body_for(CollisionBody2D const& body)
+{
+  VisualBody2D visual {};
+  visual.m_origin = body.m_origin;
+  visual.m_position = body.m_position;
+
+  if (body.m_shape.index() == 0)
+  {
+  }
+  else if (body.m_shape.index() == 1)
+  {
+    CollisionShape2DBox const& box = std::get<CollisionShape2DBox>(body.m_shape);
+    visual.m_width = box.m_width;
+    visual.m_height = box.m_height;
+    visual.m_type = VisualBody2D::Type::SolidRectangle;
+  }
+  else if (body.m_shape.index() == 2)
+  {
+    CollisionShape2DSphere const& sphere = std::get<CollisionShape2DSphere>(body.m_shape);
+    visual.m_width = sphere.m_radius * 2.0f;
+    visual.m_height = sphere.m_radius * 2.0f;
+    visual.m_type = VisualBody2D::Type::SolidSphere;
+  }
+  else {
+    // Capsule is not implemented yet
+  }
+
+  return visual;
+
+
+
 }

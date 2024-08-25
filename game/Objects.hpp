@@ -127,7 +127,10 @@ struct CollisionBody2D {
 
 struct VisualBody2D {
     enum class Type {
-        Texture2D
+        Texture2D,
+        SolidRectangle,
+        SolidCapsule,
+        SolidSphere
     };
 
     Type m_type {Type::Texture2D};
@@ -139,7 +142,11 @@ struct VisualBody2D {
     std::string m_texture_path {};
 
     std::string texture_path() const { return m_texture_path; }
-    std::string key() const { return texture_path(); }
+    std::string key() const {
+        if (m_type == Type::Texture2D) return m_texture_path;
+        if (m_type == Type::SolidSphere) return "SolidSphere";
+        return "";
+    }
 
     void set_position(glm::vec2 pos) { m_position = pos + m_origin; }
     void set_texture_path(std::string path) { m_texture_path = path; }
