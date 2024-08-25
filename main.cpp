@@ -444,6 +444,7 @@ void OpenGLDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum se
 
 int initGL(GLuint& program) {
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
   glDebugMessageCallback(OpenGLDebugMessageCallback, 0);
   return 0;
 }

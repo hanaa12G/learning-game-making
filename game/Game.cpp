@@ -430,8 +430,9 @@ extern "C" {
     // player.get_visual_body().set_scaling(0.2f);
 
     CollisionBody2D collision_body {};
-    collision_body.set_shape(CollisionShape2DSphere(16));
+    collision_body.set_shape(CollisionShape2DSphere(8));
     collision_body.set_immovable(false);
+    collision_body.set_origin({5.5f, 3.5f});
     player.set_collision_body(std::move(collision_body));
 
     player.set_position({ 0.0f, 0.0f });
@@ -518,7 +519,7 @@ extern "C" {
 
       }
 
-      if (glm::length(physical_body.get_velocity()) < 0.1)
+      if (glm::length(physical_body.get_velocity()) < 1)
       {
         physical_body.set_velocity({0.0f, 0.0f});
       }
@@ -540,9 +541,9 @@ extern "C" {
       // tree.get_visual_body().set_scaling(0.4f);
 
       CollisionBody2D collision_body {};
-      collision_body.set_shape(CollisionShape2DSphere(10));
+      collision_body.set_shape(CollisionShape2DSphere(8));
       tree.set_collision_body(std::move(collision_body));
-      tree.get_collision_body().set_origin({0.0f, -2.0f});
+      tree.get_collision_body().set_origin({5.0f, 1});
 
       float position[2] = {};
       randommizer->generateFloat(position, sizeof(position) / sizeof(float), -100.0f, 100.0f);
@@ -575,7 +576,7 @@ extern "C" {
       object.update(time_elapsed);
     }
 
-    std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 100, *distance_detector);
+    std::vector<GameObject2D*> close_objects = find_close_objects_related_to(player, scene.m_objects, 64, *distance_detector);
 
     for (auto object: close_objects) {
       bool collide = collision_detector->is_collide(*player.m_collision_body, *object->m_collision_body);
@@ -585,10 +586,12 @@ extern "C" {
     }
 
     for (auto& object : scene.m_objects) {
+            // NOTE (hanasou): Draw collision body OVER visual body
+
+                  
       if (object.m_visual_body)
         renderer.draw(object.get_visual_body());
             
-      // NOTE (hanasou): Draw collision body OVER visual body
       if (object.m_collision_body)
         renderer.draw(get_simple_visual_body_for(object.get_collision_body()));
     }
