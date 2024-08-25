@@ -38,10 +38,14 @@ struct Renderer2DOpenGL : public Renderer2D {
   std::unordered_map<std::string, Resource> m_resources {};
   unsigned m_screen_width { 0u };
   unsigned m_screen_height { 0u };
+  float m_screen_aspect_ratio { 1.0f };
 
   void set_screen_size(unsigned width, unsigned height) override {
     m_screen_width = width;
     m_screen_height = height;
+
+    m_screen_aspect_ratio = (float) m_screen_width / (float) m_screen_height;
+    m_screen_aspect_ratio *= 0.2f;
   }
 
   virtual void draw(VisualBody2D const &body) override {
@@ -72,7 +76,7 @@ struct Renderer2DOpenGL : public Renderer2D {
     //   << ", screen position: " << object_screen_position
     //   << std::endl;
     trans = glm::translate(trans, object_screen_position);
-    glm::mat4 projection = glm::ortho(-1.0f * 0.2f, 1.0f * 0.2f, -1.0f * 0.2f, 1.0f * 0.2f, -1.0f, 1.0f);
+    glm::mat4 projection = glm::ortho(-1.0f * m_screen_aspect_ratio , 1.0f * m_screen_aspect_ratio, -1.0f * 0.2f, 1.0f * 0.2f, -1.0f, 1.0f);
     
     // glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
@@ -112,7 +116,7 @@ struct Renderer2DOpenGL : public Renderer2D {
     //   << ", screen position: " << object_screen_position
     //   << std::endl;
     trans = glm::translate(trans, object_screen_position);
-    glm::mat4 projection = glm::ortho(-1.0f * 0.2f, 1.0f * 0.2f, -1.0f * 0.2f, 1.0f * 0.2f, -1.0f, 1.0f);
+    glm::mat4 projection = glm::ortho(-1.0f * m_screen_aspect_ratio , 1.0f * m_screen_aspect_ratio, -1.0f * 0.2f , 1.0f * 0.2f, -1.0f, 1.0f);
     
     // glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
